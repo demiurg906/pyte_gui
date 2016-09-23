@@ -36,13 +36,14 @@ class Connector:
         return self._getlines(self.err_from_child)
 
     def send(self, msg):
-        self.to_child.write(str(msg))
+        self.to_child.write(str(msg) + '\n')
 
 
 def test_taker():
     connector = Connector(['python3', 'taker.py'])
     for i in range(10):
         connector.send(i)
+    time.sleep(10)
 
 
 def test_sender():
