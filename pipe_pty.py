@@ -13,37 +13,40 @@ import time
 class Connector:
     def __init__(self, exe):
         master, slave = pty.openpty()
-        p = subprocess.Popen(exe, stdin=slave,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        self.to_child = os.fdopen(master, 'w')
-        self.from_child = p.stdout
-        self.err_from_child = p.stderr
+        self.p = subprocess.Popen(exe, stdin=slave,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        self.to_child = os.fdopen(master, 'wb')
+        self.from_child = self.p.stdout
+        self.err_from_child = self.p.stderr
 
-    def _getlines(self, fd):
-        output = []
-        while True:
-            line = fd.readline()
-            if line == b'':  # EOF
-                break
-            output.append(line.decode())
-        return output
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.to_child.flush()
+        if self.p.wait():
+            print('Exception in child!')
+            print(self.err_from_child.read().decode())
 
     def getlines(self):
-        return self._getlines(self.from_child)
+        return iter_lines(self.from_child)
 
     def get_error_lines(self):
-        return self._getlines(self.err_from_child)
+        return iter_lines(self.err_from_child)
 
     def send(self, msg):
-        self.to_child.write(str(msg) + '\n')
+        self.to_child.write(msg + b'\n')
+
+
+def iter_lines(handle):
+    return iter(handle.readline, b'')
 
 
 def test_taker():
-    connector = Connector(['python3', 'taker.py'])
-    for i in range(10):
-        connector.send(i)
-    time.sleep(10)
+    with Connector(['python3', 'taker.py']) as c:
+        for i in range(10):
+            c.send(str(i).encode())
 
 
 def test_sender():
