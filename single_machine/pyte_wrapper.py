@@ -17,5 +17,3 @@ if __name__ == '__main__':
         for line in screen.display:
             sys.stdout.write('{}\n'.format(line))
         sys.stdout.write('Screen ends\n\n')
-
-
