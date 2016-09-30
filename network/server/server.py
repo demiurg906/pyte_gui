@@ -11,6 +11,8 @@ from aiohttp import web
 import pyte
 import shlex
 
+from network.server import async_connector
+
 DEFAULT_SIZE = (80, 24)
 
 async def websocket_handler(request):
@@ -23,7 +25,8 @@ async def websocket_handler(request):
             if msg.data == 'close':
                 await ws.close()
             else:
-                answer = display(msg.data)
+                # answer = display(msg.data)
+                answer = async_connector.run(msg.data)
                 ws.send_str(answer)
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('ws connection closed with exception %s' %
