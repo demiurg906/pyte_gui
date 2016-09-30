@@ -86,7 +86,7 @@ def display(data):
 
 if __name__ == '__main__':
     app = web.Application()
-    app.router.add_get('/', websocket_handler)
+    app.router.add_get('/ws', websocket_handler)
     app.router.add_static('/', '../client', show_index=True)
 
     web.run_app(app)

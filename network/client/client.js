@@ -1,4 +1,4 @@
-var socket = new WebSocket('ws://0.0.0.0:8080');
+var socket = new WebSocket('ws://0.0.0.0:8080/ws');
 
 // отправить сообщение из формы publish
 document.forms.publish.onsubmit = function() {
