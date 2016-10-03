@@ -25,8 +25,8 @@ async def websocket_handler(request):
             if msg.data == 'close':
                 await ws.close()
             else:
-                # answer = display(msg.data)
-                answer = async_connector.run(msg.data)
+                answer = display(msg.data)
+                # answer = async_connector.run(msg.data)
                 ws.send_str(answer)
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('ws connection closed with exception %s' %
@@ -36,6 +36,35 @@ async def websocket_handler(request):
 
     return ws
 
+async def ws_command_line_handler(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    stream = pyte.Stream()
+    screen = pyte.Screen(*DEFAULT_SIZE)
+    stream.attach(screen)
+    screen.set_mode(pyte.screens.mo.LNM)
+
+    async for msg in ws:
+        if msg.type == aiohttp.WSMsgType.TEXT:
+            if msg.data == 'close':
+                await ws.close()
+            else:
+                stream.feed(msg.data + '\n')
+                answer = prepare_screen(screen.display)
+                ws.send_str(answer)
+        elif msg.type == aiohttp.WSMsgType.ERROR:
+            print('ws connection closed with exception %s' %
+                  ws.exception())
+    print('websocket connection closed')
+    return ws
+
+
+def prepare_screen(screen):
+    res = ''
+    for i, line in enumerate(screen):
+        res += '{:2d}: {}\n'.format(i, line)
+    return res
 
 def display(data):
     exe = shlex.split(data)
@@ -86,7 +115,8 @@ def display(data):
 
 if __name__ == '__main__':
     app = web.Application()
-    app.router.add_get('/ws', websocket_handler)
+    # app.router.add_get('/ws', websocket_handler)
+    app.router.add_get('/ws', ws_command_line_handler)
     app.router.add_static('/', '../client', show_index=True)
 
     web.run_app(app)

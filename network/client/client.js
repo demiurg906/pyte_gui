@@ -3,7 +3,7 @@ var socket = new WebSocket('ws://0.0.0.0:8080/ws');
 // отправить сообщение из формы publish
 document.forms.publish.onsubmit = function() {
   var outgoingMessage = this.message.value;
-
+  this.reset();
   socket.send(outgoingMessage);
   return false;
 };
@@ -16,6 +16,5 @@ socket.onmessage = function(event) {
 
 // показать сообщение в div#subscribe
 function showMessage(message) {
-    var html = ['<pre>', message, '</pre>'].join('');
-    document.getElementById('display').innerHTML = html;
+    document.getElementById('display').innerHTML = message;
 }
