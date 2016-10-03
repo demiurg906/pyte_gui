@@ -5,14 +5,9 @@
     <title>Title</title>
 </head>
 <body>
-    <!-- форма для отправки сообщений -->
-    <form name="publish">
-      <input name="message" type="text">
-      <input value="Отправить" type="submit">
-    </form>
-
-    <!-- здесь будут появляться входящие сообщения -->
-    <pre id="display"></pre>
+    <div id="terminal" tabindex="1">
+        <table id="screen" frame="border"></table>
+    </div>
 
     <script src="client.js"></script>
 

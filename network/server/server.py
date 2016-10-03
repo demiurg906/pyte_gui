@@ -44,6 +44,7 @@ async def ws_command_line_handler(request):
     screen = pyte.Screen(*DEFAULT_SIZE)
     stream.attach(screen)
     screen.set_mode(pyte.screens.mo.LNM)
+    ws.send_str(prepare_screen(screen.display))
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
@@ -63,8 +64,9 @@ async def ws_command_line_handler(request):
 def prepare_screen(screen):
     res = ''
     for i, line in enumerate(screen):
-        res += '{:2d}: {}\n'.format(i, line)
+        res += '{:2d}: {}\n'.format(i + 1, line)
     return res
+
 
 def display(data):
     exe = shlex.split(data)
