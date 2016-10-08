@@ -1,16 +1,19 @@
 var socket = new WebSocket('ws://0.0.0.0:8080/ws');
 var command = '';
 
-const WIDTH = 500;
+const WIDTH = 80;
 const HEIGHT = 24;
-var cursor = 0;
+var cursor = {'x': 0, 'y': 0};
 
 prepare_table = function() {
     var table = document.getElementById('screen');
     for (var i = 0; i < HEIGHT; i++) {
-        var cell = table.insertRow(i).insertCell(0);
-        cell.setAttribute('id', 'line_' + i);
-        cell.setAttribute('width', String(WIDTH));
+        var row = table.insertRow(i);
+        for (var j = 0; j < WIDTH; j++) {
+            var cell = row.insertCell(j);
+            cell.setAttribute('id', 'cell_' + i + '_' + j);
+            cell.innerText = ' ';
+        }
     }
 };
 
@@ -18,61 +21,62 @@ prepare_table();
 
 document.getElementById('terminal').onkeydown = function(event) {
     console.log(event.keyCode)
-    if (event.keyCode == 13) {
-        console.log('command = ' + command);
-        socket.send(command);
-        if (command == '')
-            cursor++;
-        command = '';
-        return
-    } else if (event.keyCode == 8) {
-        if (command != '') {
-            command = command.substr(0, command.length - 1);
-        }
-    } else {
-        var ch = String.fromCharCode(event.keyCode)
-        command += ch;
-    }
-    var line = document.getElementById('line_' + cursor);
-    //TODO: change to formatted String
-    var content = (cursor + 1) + ': ' + command;
-    line.innerHTML = '<span style="color: white;">' + content + '</span>';
+    // if (event.keyCode == 13) {
+    //     console.log('command = ' + command);
+    //     socket.send(command);
+    //     if (command == '')
+    //         cursor++;
+    //     command = '';
+    //     return
+    // } else if (event.keyCode == 8) {
+    //     if (command != '') {
+    //         command = command.substr(0, command.length - 1);
+    //     }
+    // } else {
+    //     var ch = String.fromCharCode(event.keyCode)
+    //     command += ch;
+    // }
+    var ch = String.fromCharCode(event.which);
+    getCurrentCell().className = '';
+    socket.send(ch);
 };
 
 // обработчик входящих сообщений
 socket.onmessage = function(event) {
-    var incomingMessage = event.data;
-    var screen = incomingMessage.split('\n');
-    showMessage(screen);
+    var answer = event.data;
+    var screen = JSON.parse(answer);
+    var display = screen['screen'];
+    cursor = screen['cursor'];
+    if (cursor['x'] == WIDTH) {
+        cursor['x'] = 0;
+        cursor['y']++;
+    }
+
+    showMessage(display);
 };
+
+function getCurrentCell() {
+    return getCell(cursor['y'], cursor['x']);
+}
+
+function getCell(i, j) {
+    var cellName = 'cell_' + i + '_' + j;
+    return document.getElementById(cellName);
+}
 
 // показать сообщение в div#screen
 function showMessage(screen) {
-    function find_cursor() {
-        for (var i = screen.length - 2; i >= 0; i--) {
-            var s = screen[i];
-            var ss = s.substr(4).trim();
-            if (screen[i].substr(4).trim() != '')
-                return i + 1;
-        }
-        return 0;
-    }
     // console.log(screen.length);
-    var new_cursor = find_cursor();
-    if (new_cursor > cursor)
-        cursor = new_cursor;
-    screen.forEach(function (screen_line, i, screen) {
-        if (i == HEIGHT)
-            return;
-        var line = document.getElementById('line_' + i);
-
-        if (i == cursor) {
-            line.setAttribute('bgcolor', 'black');
-            line.innerHTML = '<span style="color: white; ">' + screen_line + '</span>';
-        } else {
-            line.setAttribute('bgcolor', 'white');
-            line.innerHTML = '<span style="color: black;">' + screen_line + '</span>';
+    getCurrentCell().className = 'cursor'
+    for (var i = 0; i < HEIGHT; i++) {
+        for (var j = 0; j < WIDTH; j++) {
+            var cell = getCell(i, j);
+            // if (j == cursor['x'] && i == cursor['y']) {
+            //     cell.className = 'cursor';
+            // } else {
+            //     cell.className = '';
+            // }
+            cell.innerText = screen[i].charAt(j);
         }
-        // console.log(screen_line);
-    });
+    }
 }

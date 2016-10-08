@@ -1,3 +1,4 @@
+import json
 import os
 import pty
 import sys
@@ -11,9 +12,12 @@ from aiohttp import web
 import pyte
 import shlex
 
+from collections import namedtuple
 from network.server import async_connector
 
-DEFAULT_SIZE = (80, 24)
+Size = namedtuple('Size', ['width', 'height'])
+DEFAULT_SIZE = Size(80, 24)
+size = DEFAULT_SIZE
 
 async def websocket_handler(request):
 
@@ -43,16 +47,16 @@ async def ws_command_line_handler(request):
     stream = pyte.Stream()
     screen = pyte.Screen(*DEFAULT_SIZE)
     stream.attach(screen)
-    screen.set_mode(pyte.screens.mo.LNM)
-    ws.send_str(prepare_screen(screen.display))
+    # screen.set_mode(pyte.screens.mo.LNM)
+    ws.send_str(prepare_screen(screen))
 
     async for msg in ws:
         if msg.type == aiohttp.WSMsgType.TEXT:
             if msg.data == 'close':
                 await ws.close()
             else:
-                stream.feed(msg.data + '\n')
-                answer = prepare_screen(screen.display)
+                stream.feed(msg.data)
+                answer = prepare_screen(screen)
                 ws.send_str(answer)
         elif msg.type == aiohttp.WSMsgType.ERROR:
             print('ws connection closed with exception %s' %
@@ -62,15 +66,12 @@ async def ws_command_line_handler(request):
 
 
 def prepare_screen(screen):
-    res = ''
-    for i, line in enumerate(screen):
-        res += '{:2d}: {}\n'.format(i + 1, line)
-    return res
+    return json.dumps({'screen': screen.display, 'cursor': {'x': screen.cursor.x, 'y': screen.cursor.y}})
 
 
 def display(data):
     exe = shlex.split(data)
-    screen = pyte.Screen(*DEFAULT_SIZE)
+    screen = pyte.Screen(*size)
     screen.set_mode(pyte.screens.mo.LNM)
     stream = pyte.Stream()
     stream.attach(screen)
