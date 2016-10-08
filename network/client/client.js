@@ -1,11 +1,10 @@
 var socket = new WebSocket('ws://0.0.0.0:8080/ws');
-var command = '';
 
 const WIDTH = 80;
 const HEIGHT = 24;
 var cursor = {'x': 0, 'y': 0};
 
-prepare_table = function() {
+prepareTable = function() {
     var table = document.getElementById('screen');
     for (var i = 0; i < HEIGHT; i++) {
         var row = table.insertRow(i);
@@ -17,28 +16,73 @@ prepare_table = function() {
     }
 };
 
-prepare_table();
+prepareTable();
 
-document.getElementById('terminal').onkeydown = function(event) {
-    console.log(event.keyCode)
-    // if (event.keyCode == 13) {
-    //     console.log('command = ' + command);
-    //     socket.send(command);
-    //     if (command == '')
-    //         cursor++;
-    //     command = '';
-    //     return
-    // } else if (event.keyCode == 8) {
-    //     if (command != '') {
-    //         command = command.substr(0, command.length - 1);
-    //     }
-    // } else {
-    //     var ch = String.fromCharCode(event.keyCode)
-    //     command += ch;
-    // }
-    var ch = String.fromCharCode(event.which);
+function sendMessage(message) {
     getCurrentCell().className = '';
-    socket.send(ch);
+    socket.send(message);
+}
+
+document.getElementById('terminal').onkeydown = function(e) {
+    console.log(e.keyCode);
+    var message = null;
+    if (e.which == 8) { // backspace
+        message = ctrl.BS;
+    } else if (e.which == 9) { // tab
+        message = ctrl.CSI + esc.HTS;
+    } else if (e.which == 13) { // enter
+        message = ctrl.LF;
+    } else if (e.which == 20) { // caps lock
+
+    } else if (e.which == 27) { // esc
+        message = ctrl.ESC;
+    } else if (e.which == 33) { // page up
+
+    } else if (e.which == 34) { // page down
+
+    } else if (e.which == 35) { // end
+
+    } else if (e.which == 36) { // home
+
+    } else if (e.which == 37) { // left arrow
+        message = ctrl.CSI + esc.CUB;
+    } else if (e.which == 38) { // up arrow
+        message = ctrl.CSI + esc.CUU;
+    } else if (e.which == 39) { // right arrow
+        message = ctrl.CSI + esc.CUF;
+    } else if (e.which == 40) { // down arrow
+        message = ctrl.CSI + esc.CUD;
+    } else if (e.which == 45) { // insert
+
+    } else if (e.which == 46) { // delete
+        message = ctrl.DEL;
+    }
+    // TODO: add support for ctrl+ combinations
+    if (message) {
+        sendMessage(message);
+    }
+};
+
+// event.type должен быть keypress
+function getChar(event) {
+  if (event.which == null) { // IE
+    if (event.keyCode < 32) return null; // спец. символ
+    return String.fromCharCode(event.keyCode)
+  }
+
+  if (event.which != 0 && event.charCode != 0) { // все кроме IE
+    if (event.which < 32) return null; // спец. символ
+    return String.fromCharCode(event.which); // остальные
+  }
+
+  return null; // спец. символ
+}
+
+document.getElementById('terminal').onkeypress = function (e) {
+    var message = getChar(e);
+    if (message) {
+        sendMessage(message);
+    }
 };
 
 // обработчик входящих сообщений
@@ -66,16 +110,10 @@ function getCell(i, j) {
 
 // показать сообщение в div#screen
 function showMessage(screen) {
-    // console.log(screen.length);
     getCurrentCell().className = 'cursor'
     for (var i = 0; i < HEIGHT; i++) {
         for (var j = 0; j < WIDTH; j++) {
             var cell = getCell(i, j);
-            // if (j == cursor['x'] && i == cursor['y']) {
-            //     cell.className = 'cursor';
-            // } else {
-            //     cell.className = '';
-            // }
             cell.innerText = screen[i].charAt(j);
         }
     }
