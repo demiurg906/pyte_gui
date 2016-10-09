@@ -1,23 +1,21 @@
 import json
 import os
 import pty
+import select
+import shlex
+import subprocess
 import sys
+from collections import namedtuple
 
 import aiohttp
-import subprocess
-
-import select
-from aiohttp import web
-
 import pyte
-import shlex
-
-from collections import namedtuple
-from network.server import async_connector
+from aiohttp import web
+from . import async_connector
 
 Size = namedtuple('Size', ['width', 'height'])
 DEFAULT_SIZE = Size(80, 24)
 size = DEFAULT_SIZE
+
 
 async def websocket_handler(request):
 
@@ -40,6 +38,7 @@ async def websocket_handler(request):
 
     return ws
 
+
 async def ws_command_line_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
@@ -47,7 +46,6 @@ async def ws_command_line_handler(request):
     stream = pyte.Stream()
     screen = pyte.Screen(*DEFAULT_SIZE)
     stream.attach(screen)
-    # screen.set_mode(pyte.screens.mo.LNM)
     ws.send_str(prepare_screen(screen))
 
     async for msg in ws:
@@ -116,10 +114,12 @@ def display(data):
 
     return format_display()
 
-if __name__ == '__main__':
+
+def start_server():
+    server_folder = os.path.dirname(__file__)
     app = web.Application()
     # app.router.add_get('/ws', websocket_handler)
     app.router.add_get('/ws', ws_command_line_handler)
-    app.router.add_static('/', '../client', show_index=True)
+    app.router.add_static('/', server_folder + '/static', show_index=True)
 
     web.run_app(app)
