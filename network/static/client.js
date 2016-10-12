@@ -19,7 +19,7 @@ prepareTable = function() {
 prepareTable();
 
 function sendMessage(message) {
-    getCurrentCell().className = '';
+    // getCurrentCell().className = '';
     socket.send(message);
 }
 
@@ -108,12 +108,20 @@ function getCell(i, j) {
     return document.getElementById(cellName);
 }
 
+function checkCursor(i, j) {
+    return i == cursor['y'] && j == cursor['x']
+}
+
 // показать сообщение в div#screen
 function showMessage(screen) {
-    getCurrentCell().className = 'cursor'
+    // getCurrentCell().className = 'cursor';
     for (var i = 0; i < HEIGHT; i++) {
         for (var j = 0; j < WIDTH; j++) {
             var cell = getCell(i, j);
+            if (checkCursor(i, j))
+                cell.className = 'cursor';
+            else
+                cell.className = '';
             cell.innerText = screen[i].charAt(j);
         }
     }
