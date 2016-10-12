@@ -28,8 +28,16 @@ async def websocket_handler(request):
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
     def process_out_handler():
-        b_data = p_out.read(32)
-        data = b_data.decode()
+        def read_char(buffsize=8):
+            b_data = p_out.read(buffsize)
+            while True:
+                try:
+                    data = b_data.decode('utf-8')
+                    return data
+                except UnicodeDecodeError:
+                    b_data += p_out.read(buffsize)
+
+        data = read_char()
         terminal.feed(data)
         answer = terminal.get_json_screen()
         ws.send_str(answer)
