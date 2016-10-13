@@ -18,9 +18,9 @@ prepareTable = function() {
 
 prepareTable();
 
-function sendMessage(message) {
-    // getCurrentCell().className = '';
+function sendMessage(message, type) {
     socket.send(message);
+    // socket.send(JSON.stringify({'message': message, 'type': type}));
 }
 
 document.getElementById('terminal').onkeydown = function(e) {
@@ -59,7 +59,7 @@ document.getElementById('terminal').onkeydown = function(e) {
     }
     // TODO: add support for ctrl+ combinations
     if (message) {
-        sendMessage(message);
+        sendMessage(message, msgType.CONTROL);
     }
 };
 
@@ -80,8 +80,13 @@ function getChar(event) {
 
 document.getElementById('terminal').onkeypress = function (e) {
     var message = getChar(e);
+    if (e.ctrlKey && message == 'c') {
+        message = ctrl.CAN;
+        sendMessage(message, msgType.CONTROL);
+        return;
+    }
     if (message) {
-        sendMessage(message);
+        sendMessage(message, msgType.COMAND);
     }
 };
 
@@ -122,10 +127,22 @@ function showMessage(screen) {
                 cell.className = 'cursor';
             else
                 cell.className = '';
-            cell.innerText = screen[i].charAt(j);
+            var ch = screen[i][j][0];
+            var fg = screen[i][j][1];
+            var bg = screen[i][j][2];
+            if (fg != 'default')
+                cell.color = fg;
+            if (bg != 'default')
+                cell.backgroundColor = bg;
+            cell.innerText = ch;
         }
     }
 }
+
+const msgType = {
+    COMAND: 'comand',
+    CONTROL: 'control'
+};
 
 const esc = {
     //: *Reset*.

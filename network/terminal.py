@@ -27,6 +27,6 @@ class Terminal:
 
     def get_json_screen(self):
         return json.dumps({
-            'screen': self.screen.display,
+            'screen': self.screen.buffer,
             'cursor': {'x': self.screen.cursor.x, 'y': self.screen.cursor.y}
         })
