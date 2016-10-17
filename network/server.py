@@ -32,17 +32,17 @@ async def websocket_handler(request):
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
-    def process_out_handler():
-        def read_char(buffsize=8):
-            b_data = p_out.read(buffsize)
-            while True:
-                try:
-                    data = b_data.decode('utf-8')
-                    return data
-                except UnicodeDecodeError:
-                    b_data += p_out.read(buffsize)
+    def read_char(stream, buffsize=8):
+        b_data = stream.read(buffsize)
+        while True:
+            try:
+                data = b_data.decode('utf-8')
+                return data
+            except UnicodeDecodeError:
+                b_data += stream.read(buffsize)
 
-        data = read_char()
+    def process_out_handler():
+        data = read_char(p_out)
         terminal.feed(data)
         answer = terminal.get_json_screen()
         ws.send_str(answer)
@@ -52,10 +52,8 @@ async def websocket_handler(request):
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                if msg.data == 'close':
-                    await ws.close()
-                else:
-                    p_out.write(msg.data.encode())
+                print(msg.data, msg.data.encode())
+                p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
