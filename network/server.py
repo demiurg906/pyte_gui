@@ -5,6 +5,8 @@ from collections import namedtuple
 
 import aiohttp
 import asyncio
+
+from aiohttp import WSCloseCode
 from aiohttp import web
 
 from .terminal import Terminal
@@ -14,9 +16,11 @@ DEFAULT_SIZE = Size(80, 24)
 size = DEFAULT_SIZE
 exe = ['bash']
 
+
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    request.app['websockets'].append(ws)
 
     terminal = Terminal()
     ws.send_str(terminal.get_json_screen())
@@ -45,17 +49,22 @@ async def websocket_handler(request):
 
     loop = asyncio.get_event_loop()
     loop.add_reader(p_out, process_out_handler)
-
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                p_out.write(msg.data.encode())
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-    print('websocket connection closed')
+    try:
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                if msg.data == 'close':
+                    await ws.close()
+                else:
+                    p_out.write(msg.data.encode())
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                print('ws connection closed with exception %s' %
+                      ws.exception())
+    finally:
+        loop.remove_reader(p_out)
+        p.kill()
+        p_out.close()
+        request.app['websockets'].remove(ws)
+        print('websocket connection closed')
 
     return ws
 
@@ -63,6 +72,7 @@ async def websocket_handler(request):
 async def ws_command_line_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
+    request.app['websockets'].append(ws)
 
     terminal = Terminal()
     ws.send_str(terminal.get_json_screen())
@@ -82,11 +92,18 @@ async def ws_command_line_handler(request):
     return ws
 
 
+async def on_shutdown(app):
+    for ws in app['websockets']:
+        await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+
+
 def start_server():
     server_folder = os.path.dirname(__file__)
     app = web.Application()
+    app['websockets'] = []
     app.router.add_get('/ws', websocket_handler)
     # app.router.add_get('/ws', ws_command_line_handler)
     app.router.add_static('/', server_folder + '/static', show_index=True)
+    app.on_shutdown.append(on_shutdown)
 
     web.run_app(app)
