@@ -349,5 +349,6 @@ const ctrl = {
     DEL: '\u007f',
     
     //: *Control sequence introducer*: An equivalent for ``ESC [``.
-    CSI: '\u009b'
+    // CSI: '\u009b'
+    CSI: '\u001b'
 };
