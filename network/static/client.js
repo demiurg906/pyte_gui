@@ -59,12 +59,20 @@ document.getElementById('terminal').onkeydown = function(e) {
     } else if (e.which >= 112 && e.which <= 123) { // F1 -- F12
         var number = e.which - 111;
         message = fKeys[number];
+    } else if (e.ctrlKey && e.keyCode == 67) { //ctrl + C
+        message = ctrl.CAN;
+    } else if (e.ctrlKey) {
+        if (e.keyCode > 32) {
+            var letter = String.fromCharCode(e.keyCode);
+            console.log('ctrl + ' + letter + ' pressed');
+            message = ctrl.ESC + letter;
+        }
     }
-
-    // TODO: add support for ctrl+ combinations
     if (message) {
         sendMessage(message, msgType.CONTROL);
     }
+    e.preventDefault();
+    return false;
 };
 
 // event.type должен быть keypress
@@ -83,12 +91,8 @@ function getChar(event) {
 }
 
 document.getElementById('terminal').onkeypress = function (e) {
+
     var message = getChar(e);
-    if (e.ctrlKey && message == 'c') {
-        message = ctrl.CAN;
-        sendMessage(message, msgType.CONTROL);
-        return;
-    }
     if (message) {
         sendMessage(message, msgType.COMAND);
     }
