@@ -1,9 +1,11 @@
-table{
+#terminal { display: inline-block; }
+
+#screen {
     border-collapse: collapse;
     border-color: black;
 }
 
-td{
+#screen td {
     font-size: medium;
     font-family: monospace;
     border-color: black;
@@ -13,7 +15,7 @@ td{
     color: white;
 }
 
-td.cursor{
+#screen td.cursor {
     background-color: white;
     color: black;
 }
