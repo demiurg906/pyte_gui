@@ -1,32 +1,105 @@
-var socket = new WebSocket('ws://0.0.0.0:8080/ws');
+window.onload = function() {
+    const terminal = new Terminal('screen', 80, 24);
 
-const WIDTH = 80;
-const HEIGHT = 24;
-var cursor = {'x': 0, 'y': 0};
+    const socket = new WebSocket('ws://0.0.0.0:8080/ws');
+    socket.onmessage = e => terminal.render(JSON.parse(e.data));
 
-prepareTable = function() {
-    var table = document.getElementById('screen');
-    for (var i = 0; i < HEIGHT; i++) {
-        var row = table.insertRow(i);
-        for (var j = 0; j < WIDTH; j++) {
-            var cell = row.insertCell(j);
-            cell.setAttribute('id', 'cell_' + i + '_' + j);
-            cell.innerText = ' ';
-        }
+    const element = document.getElementById('terminal');
+    element.focus();
+
+    function send(message, type) {
+        socket.send(message);
     }
+
+    element.onkeydown = e => {
+        const message = keyToMessage(e);
+        if (message) {
+            send(message, 'control');
+            e.preventDefault();
+            return false;
+        }
+    };
+
+    element.onkeypress = e => {
+        var message = keyToMessage(e);
+        if (message) {
+            send(message, 'command');
+        }
+    };
 };
 
-prepareTable();
+class Terminal {
+    constructor(id, width, height) {
+        this.width = width;
+        this.height = height;
+        this.screen = Array(height);
+        this.cursor = {'x': 0, 'y': 0};
 
-function sendMessage(message, type) {
-    socket.send(message);
-    // socket.send(JSON.stringify({'message': message, 'type': type}));
+        const table = document.getElementById(id);
+        for (let i = 0; i < height; i++) {
+            this.screen[i] = new Array(width)
+            const row = table.insertRow(i);
+            for (let j = 0; j < width; j++) {
+                const cell = row.insertCell(j);
+                cell.innerText = ' ';
+                this.screen[i][j] = cell;
+            }
+        }
+    }
+
+    render(message) {
+        let {cursor: {x: cx, y: cy}, screen} = message;
+
+        if (cx == this.width) {
+            cx = 0;
+            cy++;
+        }
+
+        this.cursor = {x: cx, y: cy};
+
+        for (let i = 0; i < this.height; i++) {
+            for (let j = 0; j < this.width; j++) {
+                const cell = this.screen[i][j];
+                const [data, fg, bg,
+                       bold, italics, underscore, strikethrough,
+                       reverse] = screen[i][j];
+
+                cell.innerText = data;
+                cell.className = (reverse || (i == this.cursor.y &&
+                                              j == this.cursor.x))
+                    ? 'cursor'
+                    : '';
+
+                if (fg !== 'default') {
+                    cell.color = fg;
+                }
+                if (bg !== 'default') {
+                    cell.backgroundColor = bg;
+                }
+            }
+        }
+    }
 }
 
-document.getElementById('terminal').focus();
-
-document.getElementById('terminal').onkeydown = function(e) {
+function keyToMessage(e) {
     console.log(e.keyCode);
+
+    if (e.type === "keypress") {
+        if (event.which == null) { // IE
+            return (event.keyCode < 32)
+                ? null // спец. символ
+                : String.fromCharCode(event.keyCode);
+        }
+
+        if (event.which != 0 && event.charCode != 0) { // все кроме IE
+            return (event.which < 32)
+                ? null // спец. символ
+                : String.fromCharCode(event.which); // остальные
+        }
+
+        return null; // спец. символ
+    }
+
     var message = null;
     if (e.which == 8) { // backspace
         message = ctrl.BS;
@@ -70,91 +143,9 @@ document.getElementById('terminal').onkeydown = function(e) {
             message = ctrl.ESC + letter;
         }
     }
-    if (message) {
-        sendMessage(message, msgType.CONTROL);
-        e.preventDefault();
-        return false;
-    }
 
-};
-
-// event.type должен быть keypress
-function getChar(event) {
-  if (event.which == null) { // IE
-    if (event.keyCode < 32) return null; // спец. символ
-    return String.fromCharCode(event.keyCode)
-  }
-
-  if (event.which != 0 && event.charCode != 0) { // все кроме IE
-    if (event.which < 32) return null; // спец. символ
-    return String.fromCharCode(event.which); // остальные
-  }
-
-  return null; // спец. символ
+    return message;
 }
-
-document.getElementById('terminal').onkeypress = function (e) {
-
-    var message = getChar(e);
-    if (message) {
-        sendMessage(message, msgType.COMAND);
-    }
-};
-
-// обработчик входящих сообщений
-socket.onmessage = function(event) {
-    var answer = event.data;
-    var screen = JSON.parse(answer);
-    var display = screen['screen'];
-    cursor = screen['cursor'];
-    if (cursor['x'] == WIDTH) {
-        cursor['x'] = 0;
-        cursor['y']++;
-    }
-
-    showMessage(display);
-};
-
-function getCurrentCell() {
-    return getCell(cursor['y'], cursor['x']);
-}
-
-function getCell(i, j) {
-    var cellName = 'cell_' + i + '_' + j;
-    return document.getElementById(cellName);
-}
-
-function checkCursor(i, j) {
-    return i == cursor['y'] && j == cursor['x']
-}
-
-// показать сообщение в div#screen
-function showMessage(screen) {
-    // getCurrentCell().className = 'cursor';
-    for (var i = 0; i < HEIGHT; i++) {
-        for (var j = 0; j < WIDTH; j++) {
-            var cell = getCell(i, j);
-            var ch = screen[i][j][0];
-            var fg = screen[i][j][1];
-            var bg = screen[i][j][2];
-            var reverse = screen[i][j][7];
-            if (reverse || checkCursor(i, j))
-                cell.className = 'cursor';
-            else
-                cell.className = '';
-            if (fg != 'default')
-                cell.color = fg;
-            if (bg != 'default')
-                cell.backgroundColor = bg;
-            cell.innerText = ch;
-        }
-    }
-}
-
-const msgType = {
-    COMAND: 'comand',
-    CONTROL: 'control'
-};
 
 const esc = {
     //: *Reset*.

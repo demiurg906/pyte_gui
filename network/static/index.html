@@ -1,16 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <link rel="stylesheet" type="text/css" href="style.css" />
-</head>
-<body>
+    <title>My Little Terminal</title>
+    <style>
+      #terminal { display: inline-block; }
+
+      #screen {
+          border-collapse: collapse;
+          border-color: black;
+      }
+
+      #screen td {
+          font-size: medium;
+          font-family: monospace;
+          border-color: black;
+          width: .6em;
+          height: 1.2em;
+          background-color: black;
+          color: white;
+      }
+
+      #screen td.cursor {
+          background-color: white;
+          color: black;
+      }
+    </style>
+  </head>
+
+  <body>
     <div id="terminal" tabindex="1">
         <table id="screen" frame="border"></table>
     </div>
 
     <script src="client.js"></script>
-
-</body>
+  </body>
 </html>
