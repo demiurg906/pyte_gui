@@ -1,5 +1,6 @@
 import os
 import pty
+import shlex
 import subprocess
 from collections import namedtuple
 
@@ -14,8 +15,10 @@ from .terminal import Terminal
 Size = namedtuple('Size', ['width', 'height'])
 DEFAULT_SIZE = Size(80, 24)
 size = DEFAULT_SIZE
-exe = ['bash']
+exe = 'bash -i'
+exe = shlex.split(exe)
 
+# exe = ['bash', '-i', '--login']
 
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
@@ -33,13 +36,19 @@ async def websocket_handler(request):
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
     def read_char(stream, buffsize=8):
-        b_data = stream.read(buffsize)
-        while True:
-            try:
-                data = b_data.decode('utf-8')
-                return data
-            except UnicodeDecodeError:
-                b_data += stream.read(buffsize)
+        try:
+            b_data = stream.read(buffsize)
+            while True:
+                try:
+                    data = b_data.decode('utf-8')
+                    return data
+                except UnicodeDecodeError:
+                    b_data += stream.read(buffsize)
+        except OSError as e:
+            if e.errno == 5:
+                return ''
+            else:
+                raise e
 
     def process_out_handler():
         data = read_char(p_out)
@@ -52,7 +61,7 @@ async def websocket_handler(request):
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                print(msg.data, msg.data.encode())
+                print('char: {}, byte: {}'.format(msg.data, msg.data.encode()))
                 p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
