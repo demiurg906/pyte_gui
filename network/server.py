@@ -31,22 +31,19 @@ async def websocket_handler(request):
     master_fd, slave_fd = pty.openpty()
     p = subprocess.Popen(exe, stdin=slave_fd, stdout=slave_fd,
                          stderr=subprocess.STDOUT, close_fds=True,
-                         env={'TERM': 'vt220', 'COLUMNS': str(size.width), 'LINES': str(size.height)})
+                         env={'TERM': 'linux',
+                              'COLUMNS': str(size.width),
+                              'LINES': str(size.height)})
+
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
     def read_char(stream, buffsize=8):
         try:
-            b_data = stream.read(buffsize)
-            while True:
-                try:
-                    data = b_data.decode('utf-8')
-                    return data
-                except UnicodeDecodeError:
-                    b_data += stream.read(buffsize)
+            return stream.read(buffsize)
         except OSError as e:
-            if e.errno == 5:
-                return ''
+            if e.errno == errno.EIO:
+                return b''
             else:
                 raise e
 
