@@ -70,9 +70,10 @@ document.getElementById('terminal').onkeydown = function(e) {
     }
     if (message) {
         sendMessage(message, msgType.CONTROL);
+        e.preventDefault();
+        return false;
     }
-    e.preventDefault();
-    return false;
+
 };
 
 // event.type должен быть keypress
