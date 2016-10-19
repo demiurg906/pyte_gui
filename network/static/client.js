@@ -56,7 +56,11 @@ document.getElementById('terminal').onkeydown = function(e) {
 
     } else if (e.which == 46) { // delete
         message = ctrl.DEL;
+    } else if (e.which >= 112 && e.which <= 123) { // F1 -- F12
+        var number = e.which - 111;
+        message = fKeys[number];
     }
+
     // TODO: add support for ctrl+ combinations
     if (message) {
         sendMessage(message, msgType.CONTROL);
@@ -352,4 +356,19 @@ const ctrl = {
     //: *Control sequence introducer*: An equivalent for ``ESC [``.
     // CSI: '\u009b'
     CSI: '\u001b['
+};
+
+const fKeys = {
+    1: ctrl.ESC + 'OP',
+    2: ctrl.ESC + 'OQ',
+    3: ctrl.ESC + 'OR',
+    4: ctrl.ESC + 'OS',
+    5: ctrl.CSI + '15~',
+    6: ctrl.CSI + '17~',
+    7: ctrl.CSI + '18~',
+    8: ctrl.CSI + '19~',
+    9: ctrl.CSI + '20~',
+    10: ctrl.CSI + '21~',
+    11: ctrl.CSI + '23~',
+    12: ctrl.CSI + '24~'
 };
