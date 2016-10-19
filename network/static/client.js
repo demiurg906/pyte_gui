@@ -123,13 +123,14 @@ function showMessage(screen) {
     for (var i = 0; i < HEIGHT; i++) {
         for (var j = 0; j < WIDTH; j++) {
             var cell = getCell(i, j);
-            if (checkCursor(i, j))
-                cell.className = 'cursor';
-            else
-                cell.className = '';
             var ch = screen[i][j][0];
             var fg = screen[i][j][1];
             var bg = screen[i][j][2];
+            var reverse = screen[i][j][7];
+            if (reverse || checkCursor(i, j))
+                cell.className = 'cursor';
+            else
+                cell.className = '';
             if (fg != 'default')
                 cell.color = fg;
             if (bg != 'default')
