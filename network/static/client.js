@@ -351,5 +351,5 @@ const ctrl = {
     
     //: *Control sequence introducer*: An equivalent for ``ESC [``.
     // CSI: '\u009b'
-    CSI: '\u001b'
+    CSI: '\u001b['
 };
