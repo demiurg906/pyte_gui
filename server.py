@@ -1,39 +1,60 @@
+import errno
+import json
 import os
 import pty
 import shlex
 import subprocess
-from collections import namedtuple
 
 import aiohttp
 import asyncio
-
+import pyte
 from aiohttp import WSCloseCode
 from aiohttp import web
 
-from .terminal import Terminal
-
-Size = namedtuple('Size', ['width', 'height'])
-DEFAULT_SIZE = Size(80, 24)
+DEFAULT_SIZE = (80, 24)
 size = DEFAULT_SIZE
-exe = 'bash -i'
-exe = shlex.split(exe)
 
-# exe = ['bash', '-i', '--login']
+exe = shlex.split('bash -i')
+
+
+class Terminal:
+    def __init__(self, size):
+        self.screen = pyte.Screen(*size)
+        self.screen.set_mode(pyte.screens.mo.LNM)
+        self.stream = pyte.Stream()
+        self.stream.attach(self.screen)
+
+    def feed(self, data):
+        self.stream.feed(data)
+
+    def get_screen(self):
+        screen = ''
+        for i, line in enumerate(self.screen.display):
+            screen += '{:2d}: {}\n'.format(i, line)
+        return screen
+
+    def get_json_screen(self):
+        return json.dumps({
+            'screen': self.screen.buffer,
+            'cursor': {'x': self.screen.cursor.x, 'y': self.screen.cursor.y}
+        })
+
 
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     request.app['websockets'].append(ws)
 
-    terminal = Terminal()
+    width, height = size = DEFAULT_SIZE
+    terminal = Terminal(size)
     ws.send_str(terminal.get_json_screen())
 
     master_fd, slave_fd = pty.openpty()
     p = subprocess.Popen(exe, stdin=slave_fd, stdout=slave_fd,
                          stderr=subprocess.STDOUT, close_fds=True,
                          env={'TERM': 'vt220',
-                              'COLUMNS': str(size.width),
-                              'LINES': str(size.height)})
+                              'COLUMNS': str(width),
+                              'LINES': str(height)})
 
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
@@ -102,12 +123,15 @@ async def on_shutdown(app):
 
 
 def start_server():
-    server_folder = os.path.dirname(__file__)
     app = web.Application()
     app['websockets'] = []
     app.router.add_get('/ws', websocket_handler)
     # app.router.add_get('/ws', ws_command_line_handler)
-    app.router.add_static('/', server_folder + '/static', show_index=True)
+    app.router.add_static('/', './static', show_index=True)
     app.on_shutdown.append(on_shutdown)
 
     web.run_app(app)
+
+
+if __name__ == "__main__":
+    start_server()
