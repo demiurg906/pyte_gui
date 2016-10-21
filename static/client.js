@@ -85,16 +85,16 @@ function keyToMessage(e) {
     console.log(e.keyCode);
 
     if (e.type === "keypress") {
-        if (event.which == null) { // IE
-            return (event.keyCode < 32)
+        if (e.which == null) { // IE
+            return (e.keyCode < 32)
                 ? null // спец. символ
-                : String.fromCharCode(event.keyCode);
+                : String.fromCharCode(e.keyCode);
         }
 
-        if (event.which != 0 && event.charCode != 0) { // все кроме IE
-            return (event.which < 32)
+        if (e.which != 0 && e.charCode != 0) { // все кроме IE
+            return (e.which < 32)
                 ? null // спец. символ
-                : String.fromCharCode(event.which); // остальные
+                : String.fromCharCode(e.which); // остальные
         }
 
         return null; // спец. символ
