@@ -48,16 +48,17 @@ class Terminal {
     }
 
     render(message) {
-        let {cursor: {x: cx, y: cy}, screen} = message;
-
+        let {cursor: {x: cx, y: cy}, screen, dirty} = message;
         if (cx == this.width) {
             cx = 0;
             cy++;
         }
 
         this.cursor = {x: cx, y: cy};
+        console.log('-----------------------------------');
 
-        for (let i = 0; i < this.height; i++) {
+        for (let i of dirty) {
+            console.log('dirty line: ' + i);
             for (let j = 0; j < this.width; j++) {
                 const cell = this.screen[i][j];
                 const [data, fg, bg,

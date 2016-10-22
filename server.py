@@ -19,12 +19,13 @@ exe = shlex.split('bash -i')
 
 class Terminal:
     def __init__(self, size):
-        self.screen = pyte.Screen(*size)
+        self.screen = pyte.DiffScreen(*size)
         self.screen.set_mode(pyte.screens.mo.LNM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
 
     def feed(self, data):
+        # self.screen.dirty.clear()
         self.stream.feed(data)
 
     def get_screen(self):
@@ -34,10 +35,13 @@ class Terminal:
         return screen
 
     def get_json_screen(self):
-        return json.dumps({
+        res = json.dumps({
             'screen': self.screen.buffer,
-            'cursor': {'x': self.screen.cursor.x, 'y': self.screen.cursor.y}
+            'cursor': {'x': self.screen.cursor.x, 'y': self.screen.cursor.y},
+            'dirty': list(self.screen.dirty)
         })
+        self.screen.dirty.clear()
+        return res
 
 
 async def websocket_handler(request):
