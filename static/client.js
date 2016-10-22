@@ -54,6 +54,7 @@ class Terminal {
             cy++;
         }
 
+        this.eraseCursor();
         this.cursor = {x: cx, y: cy};
         console.log('-----------------------------------');
 
@@ -80,6 +81,12 @@ class Terminal {
             }
         }
     }
+
+    eraseCursor() {
+        let cell = this.screen[this.cursor.y][this.cursor.x];
+        cell.className = '';
+    }
+
 }
 
 function keyToMessage(e) {
