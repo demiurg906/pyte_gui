@@ -1,11 +1,19 @@
 window.onload = function() {
     const terminal = new Terminal('screen', 80, 24);
 
-    const socket = new WebSocket('ws://0.0.0.0:8080/ws');
-    socket.onmessage = e => terminal.render(JSON.parse(e.data));
+    const serverUrl = 'ws://0.0.0.0:8080/ws';
+    var socket;
 
     const element = document.getElementById('terminal');
     element.focus();
+
+    function start() {
+        socket = new WebSocket(serverUrl);
+        socket.onmessage = e => terminal.render(JSON.parse(e.data));
+        socket.onclose = () => {setTimeout(() => {start()}, 5000)}
+    }
+
+    start();
 
     function send(message, type) {
         socket.send(message);
