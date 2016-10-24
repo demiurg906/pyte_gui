@@ -64,10 +64,10 @@ class Terminal {
 
         this.eraseCursor();
         this.cursor = {x: cx, y: cy};
-        console.log('-----------------------------------');
+        // console.log('-----------------------------------');
 
         for (let i of dirty) {
-            console.log('dirty line: ' + i);
+            // console.log('dirty line: ' + i);
             for (let j = 0; j < this.width; j++) {
                 const cell = this.screen[i][j];
                 const [data, fg, bg,
@@ -98,7 +98,7 @@ class Terminal {
 }
 
 function keyToMessage(e) {
-    console.log(e.keyCode);
+    // console.log(e.keyCode);
 
     if (e.type === "keypress") {
         if (e.which == null) { // IE
@@ -155,7 +155,7 @@ function keyToMessage(e) {
     } else if (e.ctrlKey) {
         if (e.keyCode > 32) {
             var letter = String.fromCharCode(e.keyCode);
-            console.log('ctrl + ' + letter + ' pressed');
+            // console.log('ctrl + ' + letter + ' pressed');
             message = ctrl.ESC + letter;
         }
     }
