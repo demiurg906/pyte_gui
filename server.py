@@ -136,7 +136,7 @@ async def on_shutdown(app):
 
 def generate_id():
     # TODO: make better id choosing
-    return random.random(1000)
+    return random.randint(1, 1000)
 
 
 def start_server():
