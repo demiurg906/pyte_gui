@@ -2,6 +2,7 @@ import errno
 import json
 import os
 import pty
+import random
 import shlex
 import subprocess
 
@@ -46,6 +47,12 @@ class Terminal:
 
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
+    if 'id' in request.cookies:
+        ws_id = request.cookies['id']
+    else:
+        ws_id = generate_id()
+        ws.set_cookie(name='id', value=ws_id)
+    print('client id = {}'.format(ws_id))
     await ws.prepare(request)
     request.app['websockets'].append(ws)
 
@@ -125,6 +132,11 @@ async def ws_command_line_handler(request):
 async def on_shutdown(app):
     for ws in app['websockets']:
         await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+
+
+def generate_id():
+    # TODO: make better id choosing
+    return random.random(1000)
 
 
 def start_server():
