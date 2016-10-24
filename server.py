@@ -71,7 +71,7 @@ async def websocket_handler(request):
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
-    def read_char(stream, buffsize=8):
+    def read_char(stream, buffsize=65536):
         try:
             return stream.read(buffsize)
         except OSError as e:
