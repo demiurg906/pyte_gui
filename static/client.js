@@ -101,6 +101,7 @@ function keyToMessage(e) {
     // console.log(e.keyCode);
 
     function ctrlKey(x) {
+        console.log(x - 65 + 1);
         return String.fromCharCode(x - 65 + 1);
         // if (x >= 'a' && x <= 'z')
         //     return ((x) - 'a' + 1);
@@ -124,11 +125,12 @@ function keyToMessage(e) {
         return null; // спец. символ
     }
 
+    console.log(e.which);
     var message = null;
     if (e.which == 8) { // backspace
         message = ctrl.BS;
     } else if (e.which == 9) { // tab
-        message = ctrl.CSI + esc.HTS;
+        message = ctrl.TAB;
     } else if (e.which == 13) { // enter
         message = ctrl.LF;
     } else if (e.which == 20) { // caps lock
@@ -159,8 +161,11 @@ function keyToMessage(e) {
         var number = e.which - 111;
         message = fKeys[number];
     } else if (e.ctrlKey) { // ctrl+...
-        if (e.keyCode > 32) {
+        if (e.keyCode >= 65 && e.keyCode <= 90) { // keycode in ['A'..'Z']
             message = ctrlKey(e.keyCode);
+        }
+        else if (e.which >= 48 && e.which <= 57) { //keycode in ['0'..'9']
+            message = controlNumberKeys[e.which - 48];
         }
     }
 
@@ -373,7 +378,10 @@ const ctrl = {
 
     //: *Control sequence introducer*: An equivalent for ``ESC [``.
     // CSI: '\u009b'
-    CSI: '\u001b['
+    CSI: '\u001b[',
+
+    // *Tab*
+    TAB: '\u0009'
 };
 
 const fKeys = {
@@ -389,4 +397,17 @@ const fKeys = {
     10: ctrl.CSI + '21~',
     11: ctrl.CSI + '23~',
     12: ctrl.CSI + '24~'
+};
+
+const controlNumberKeys = {
+    0: '\u0030',
+    1: '\u0031',
+    2: '\u0000',
+    3: '\u001b',
+    4: '\u001c',
+    5: '\u001d',
+    6: '\u001e',
+    7: '\u001f',
+    8: '\u007f',
+    9: '\u0039',
 };
