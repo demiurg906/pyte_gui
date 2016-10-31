@@ -100,6 +100,14 @@ class Terminal {
 function keyToMessage(e) {
     // console.log(e.keyCode);
 
+    function ctrlKey(x) {
+        return String.fromCharCode(x - 65 + 1);
+        // if (x >= 'a' && x <= 'z')
+        //     return ((x) - 'a' + 1);
+        // else
+        //     return ((x) - 'A' + 1) & 0x7f;
+    }
+
     if (e.type === "keypress") {
         if (e.which == null) { // IE
             return (e.keyCode < 32)
@@ -150,13 +158,9 @@ function keyToMessage(e) {
     } else if (e.which >= 112 && e.which <= 123) { // F1 -- F12
         var number = e.which - 111;
         message = fKeys[number];
-    } else if (e.ctrlKey && e.keyCode == 67) { //ctrl + C
-        message = ctrl.CAN;
-    } else if (e.ctrlKey) {
+    } else if (e.ctrlKey) { // ctrl+...
         if (e.keyCode > 32) {
-            var letter = String.fromCharCode(e.keyCode);
-            // console.log('ctrl + ' + letter + ' pressed');
-            message = ctrl.ESC + letter;
+            message = ctrlKey(e.keyCode);
         }
     }
 
