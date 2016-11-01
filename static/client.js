@@ -75,8 +75,7 @@ class Terminal {
                        reverse] = screen[i][j];
 
                 cell.innerText = data;
-                cell.className = (reverse || (i == this.cursor.y &&
-                                              j == this.cursor.x))
+                cell.className = reverse
                     ? 'cursor'
                     : '';
 
@@ -88,6 +87,7 @@ class Terminal {
                 }
             }
         }
+        this.screen[cy][cx].className = 'cursor';
     }
 
     eraseCursor() {
