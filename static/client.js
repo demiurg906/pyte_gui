@@ -62,7 +62,7 @@ class Terminal {
             cy++;
         }
 
-        this.eraseCursor();
+        this.updateCursor(true);
         this.cursor = {x: cx, y: cy};
         // console.log('-----------------------------------');
 
@@ -87,12 +87,16 @@ class Terminal {
                 }
             }
         }
-        this.screen[cy][cx].className = 'cursor';
+        this.updateCursor();
     }
 
-    eraseCursor() {
-        let cell = this.screen[this.cursor.y][this.cursor.x];
-        cell.className = '';
+    updateCursor(erase=false) {
+        if (this.cursor.y < this.height && this.cursor.x < this.width) {
+            let cell = this.screen[this.cursor.y][this.cursor.x];
+            cell.className = erase
+                            ? ''
+                            : 'cursor';
+        }
     }
 
 }
