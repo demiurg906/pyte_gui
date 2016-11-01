@@ -45,7 +45,7 @@ class Terminal {
 
         const table = document.getElementById(id);
         for (let i = 0; i < height; i++) {
-            this.screen[i] = new Array(width)
+            this.screen[i] = new Array(width);
             const row = table.insertRow(i);
             for (let j = 0; j < width; j++) {
                 const cell = row.insertCell(j);
@@ -70,21 +70,23 @@ class Terminal {
             // console.log('dirty line: ' + i);
             for (let j = 0; j < this.width; j++) {
                 const cell = this.screen[i][j];
-                const [data, fg, bg,
+                let [data, fg, bg,
                        bold, italics, underscore, strikethrough,
                        reverse] = screen[i][j];
 
                 cell.innerText = data;
+
+                if (fg === 'default')
+                    fg = '';
+                if (bg === 'default')
+                    bg = '';
+
+                cell.style.color = fg;
+                cell.style.backgroundColor = bg;
+
                 cell.className = reverse
                     ? 'cursor'
                     : '';
-
-                if (fg !== 'default') {
-                    cell.color = fg;
-                }
-                if (bg !== 'default') {
-                    cell.backgroundColor = bg;
-                }
             }
         }
         this.updateCursor();

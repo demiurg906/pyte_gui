@@ -63,7 +63,9 @@ async def websocket_handler(request):
     master_fd, slave_fd = pty.openpty()
     p = subprocess.Popen(exe, stdin=slave_fd, stdout=slave_fd,
                          stderr=subprocess.STDOUT, close_fds=True,
-                         env={'TERM': 'vt220',
+                         env={
+                             'TERM': 'linux',
+                              # 'TERM': 'vt220',
                               'LC_ALL': 'en_GB.UTF-8',
                               'COLUMNS': str(width),
                               'LINES': str(height)})
