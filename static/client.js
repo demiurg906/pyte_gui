@@ -220,12 +220,13 @@ const ctrl = {
     LEFT_ARROW: '\u001b[D',
 };
 
+// *F keys* for linux terminal
 const fKeys = {
-    1: ctrl.ESC + 'OP',
-    2: ctrl.ESC + 'OQ',
-    3: ctrl.ESC + 'OR',
-    4: ctrl.ESC + 'OS',
-    5: ctrl.CSI + '15~',
+    1: ctrl.CSI + '[A',
+    2: ctrl.CSI + '[B',
+    3: ctrl.CSI + '[C',
+    4: ctrl.CSI + '[D',
+    5: ctrl.CSI + '[E',
     6: ctrl.CSI + '17~',
     7: ctrl.CSI + '18~',
     8: ctrl.CSI + '19~',
@@ -234,6 +235,23 @@ const fKeys = {
     11: ctrl.CSI + '23~',
     12: ctrl.CSI + '24~'
 };
+
+
+// *F keys* for vt220 terminal
+// const fKeys = {
+//     1: ctrl.ESC + 'OP',
+//     2: ctrl.ESC + 'OQ',
+//     3: ctrl.ESC + 'OR',
+//     4: ctrl.ESC + 'OS',
+//     5: ctrl.CSI + '15~',
+//     6: ctrl.CSI + '17~',
+//     7: ctrl.CSI + '18~',
+//     8: ctrl.CSI + '19~',
+//     9: ctrl.CSI + '20~',
+//     10: ctrl.CSI + '21~',
+//     11: ctrl.CSI + '23~',
+//     12: ctrl.CSI + '24~'
+// };
 
 const controlNumberKeys = {
     0: '\u0030',
