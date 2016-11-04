@@ -40,7 +40,7 @@ class Terminal {
     constructor(id, width, height) {
         this.width = width;
         this.height = height;
-        this.screen = Array(height);
+        this.screen = new Array(height);
         this.cursor = {'x': 0, 'y': 0};
 
         const table = document.getElementById(id);
@@ -49,10 +49,39 @@ class Terminal {
             const row = table.insertRow(i);
             for (let j = 0; j < width; j++) {
                 const cell = row.insertCell(j);
+                cell.className = 'fg-default bg-default';
                 cell.innerText = ' ';
                 this.screen[i][j] = cell;
             }
         }
+    }
+
+    setColor(cell, color, type) {
+        const className = type + '-' + color;
+        let regexp;
+        if (type === 'fg')
+            regexp = /fg-\w*/;
+        else
+            regexp = /bg-\w*/;
+        cell.className = cell.className.replace(regexp, className);
+    }
+
+    setFgColor(cell, color) {
+        this.setColor(cell, color, 'fg')
+    }
+
+    setBgColor(cell, color) {
+        this.setColor(cell, color, 'bg')
+    }
+
+    setReverse(cell) {
+        this.setColor(cell, 'reverse', 'fg');
+        this.setColor(cell, 'reverse', 'bg');
+    }
+
+    setDefault(cell) {
+        this.setFgColor(cell, 'default');
+        this.setBgColor(cell, 'default');
     }
 
     render(message) {
@@ -76,17 +105,11 @@ class Terminal {
 
                 cell.innerText = data;
 
-                if (fg === 'default')
-                    fg = '';
-                if (bg === 'default')
-                    bg = '';
+                this.setFgColor(cell, fg);
+                this.setBgColor(cell, bg);
 
-                cell.style.color = fg;
-                cell.style.backgroundColor = bg;
-
-                cell.className = reverse
-                    ? 'cursor'
-                    : '';
+                if (reverse)
+                    this.setReverse();
             }
         }
         this.updateCursor();
@@ -95,12 +118,12 @@ class Terminal {
     updateCursor(erase=false) {
         if (this.cursor.y < this.height && this.cursor.x < this.width) {
             let cell = this.screen[this.cursor.y][this.cursor.x];
-            cell.className = erase
-                            ? ''
-                            : 'cursor';
+            if (erase)
+                this.setDefault(cell);
+            else
+                this.setReverse(cell);
         }
     }
-
 }
 
 function keyToMessage(e) {
