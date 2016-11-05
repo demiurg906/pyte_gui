@@ -2,7 +2,7 @@ var gulp = require('gulp');
 var react = require('gulp-react');
 
 var sass = require('gulp-sass');
-// var autoprefixer = require('gulp-autoprefixer');
+var autoprefixer = require('gulp-autoprefixer');
 var source = require('vinyl-source-stream');
 // var connect = require('gulp-connect');
 var reactify = require('reactify');
@@ -11,8 +11,7 @@ var watchify = require('watchify');
 var uglify = require('gulp-uglify');
 var shell = require('gulp-shell');
 
-gulp.task('run-server-without-jsx', shell.task(['python3 server.py'], verbose=true));
-gulp.task('run-server', ['example/lib'], shell.task(['python3 server.py'], verbose=true));
+gulp.task('run-server', ['client/lib', 'client/style'], shell.task(['python3 server.py'], verbose=true));
 
 gulp.task('default', ['package']);
 
@@ -22,7 +21,7 @@ gulp.task('package', function () {
         .pipe(gulp.dest('pkg'));
 });
 
-gulp.task('example/lib', ['default'], function () {
+gulp.task('client/lib', ['default'], function () {
     var bundler = watchify(browserify({
         cache: {},
         packageCache: {},
@@ -47,4 +46,12 @@ gulp.task('example/lib', ['default'], function () {
     }
 
     return rebundle();
+});
+
+gulp.task('client/style', ['default'], function () {
+    return gulp.src('client/main.scss')
+        .pipe(sass({errLogToConsole: true, outputStyle: 'compressed'}))
+        .pipe(autoprefixer())
+        .pipe(gulp.dest('client/static/css'));
+        // .pipe(connect.reload());
 });

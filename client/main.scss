@@ -1,0 +1,128 @@
+/*
+ * EXAMPLE APP ONLY
+ */
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+}
+
+/*
+ * RECOMMENDED
+ */
+
+.ranger {
+  $status-height: 30px;
+
+  cursor: default;
+  user-select: none;
+
+  // clearfix
+  .ranger:after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+
+  // hide input
+  input {
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  /*
+   * PANES
+   */
+
+  .pane-container {
+    position: absolute;
+    top: 510px;
+    left: 0;
+    right: 0;
+    bottom: $status-height;
+    border-bottom: 1px solid #ccc;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+
+  .pane {
+    position: relative;
+    display: inline-block;
+    width: 33.33%;
+    max-width: 400px;
+    min-width: 200px;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    border-right: 1px solid #ccc;
+    vertical-align: top;
+    white-space: normal;
+    word-wrap: break-word;
+  }
+
+  /*
+   * STATUS
+   */
+
+  .status {
+    position: absolute;
+    padding: 0 10px;
+    height: $status-height;
+    line-height: $status-height;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+
+  /*
+   * ITEM LIST
+   */
+
+  .item-list {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /*
+   * FILES AND DIRECTORIES
+   */
+
+  .pane .active {
+    background: #ccc;
+    color: #333;
+  }
+
+  &.focus .pane .active {
+    background: #444;
+    color: #fff;
+  }
+
+  .directory {
+    font-weight: bold;
+  }
+
+  .directory:after {
+    content: '/'
+  }
+
+  .file, .directory {
+    line-height: 40px;
+    padding: 0 10px;
+
+    &:active {
+      background: #eee;
+    }
+  }
+
+}

@@ -1,12 +1,55 @@
 var $ = require('jquery');
 var React = require('react');
+var Ranger = require('../lib');
 
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
+const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
+
 const serverUrl = 'ws://0.0.0.0:8080/ws';
 
+var currentCss = DEFAULT_CSS;
+
 $(function () {
-    React.render(<Terminal/>, document.body);
+    function updateCss(css) {
+        $("<link/>", {
+            rel: "stylesheet",
+        }).remove();
+        $("<link/>", {
+            rel: "stylesheet",
+            href: css
+        }).appendTo("head");
+    }
+    var store = Ranger.createStore(null, function (item) {
+        console.log('opening', item);
+    });
+
+    var ItemView = React.createClass({
+        render: function () {
+            return (
+                <div>
+                    <p><strong>Name:</strong> {this.props.item.name}</p>
+                    <p><button onClick={() => {
+                        var pathToCss = 'css' + this.props.item.path + '.css';
+                        updateCss(pathToCss);
+                    }}>Apply Scheme</button></p>
+                </div>
+            );
+        }
+    });
+
+    React.render(
+        <div>
+            <Terminal/>
+            <Ranger store={store} view={ItemView} />
+        </div>, document.body);
+
+    $.get('schemes/index.json').then(function (content) {
+        store.setRootDir(Ranger.parseList(content));
+    });
+
+    updateCss(DEFAULT_CSS);
+
     $("#terminal").focus()
 });
 
