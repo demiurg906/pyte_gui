@@ -1,0 +1,80 @@
+#screen td.fg-default{
+    color: #a39e9b;
+}
+
+#screen td.bg-default{
+    background-color: #2f1e2e;
+}
+
+#screen td.fg-reverse{
+    color: #2f1e2e;
+}
+
+#screen td.bg-reverse{
+    background-color: #a39e9b;
+}
+
+#screen td.fg-green{
+    color: #48b685;
+}
+
+#screen td.bg-green{
+    background-color: #48b685;
+}
+
+#screen td.fg-brown{
+    color: #fec418;
+}
+
+#screen td.bg-brown{
+    background-color: #fec418;
+}
+
+#screen td.fg-blue{
+    color: #06b6ef;
+}
+
+#screen td.bg-blue{
+    background-color: #06b6ef;
+}
+
+#screen td.fg-magenta{
+    color: #815ba4;
+}
+
+#screen td.bg-magenta{
+    background-color: #815ba4;
+}
+
+#screen td.fg-cyan{
+    color: #5bc4bf;
+}
+
+#screen td.bg-cyan{
+    background-color: #5bc4bf;
+}
+
+#screen td.fg-white{
+    color: #a39e9b;
+}
+
+#screen td.bg-white{
+    background-color: #e7e9db;
+}
+
+#screen td.fg-black{
+    color: #2f1e2e;
+}
+
+#screen td.bg-black{
+    background-color: #776e71;
+}
+
+#screen td.fg-red{
+    color: #ef6155;
+}
+
+#screen td.bg-red{
+    background-color: #ef6155;
+}
+
