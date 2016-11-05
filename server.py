@@ -146,7 +146,7 @@ def start_server():
     app['websockets'] = []
     app.router.add_get('/ws', websocket_handler)
     # app.router.add_get('/ws', ws_command_line_handler)
-    app.router.add_static('/', './static', show_index=True)
+    app.router.add_static('/', './client/static', show_index=True)
     app.on_shutdown.append(on_shutdown)
 
     web.run_app(app)
