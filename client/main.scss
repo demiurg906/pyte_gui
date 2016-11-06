@@ -40,8 +40,8 @@ body {
 
   .pane-container {
     position: absolute;
-    top: 510px;
-    left: 0;
+    top: 0;
+    left: 960px;
     right: 0;
     bottom: $status-height;
     border-bottom: 1px solid #ccc;
@@ -122,6 +122,52 @@ body {
 
     &:active {
       background: #eee;
+    }
+  }
+
+}
+
+.schemes {
+  padding: 20px;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  h1 {
+    margin: 0;
+  }
+
+  $border: 5px;
+
+  button {
+    margin: 10px 0;
+  }
+
+  .colors {
+    //@extend #clearfix;
+    flex: 1;
+
+    .color {
+      float: left;
+      width: 50%;
+      height: 30px;
+      border-bottom: $border solid transparent;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    .text {
+      display:inline-block;
+      vertical-align:middle;
+    }
+
+    .helper {
+      display:inline-block;
+      vertical-align:middle;
+      height:100%;
+      width:0px;
     }
   }
 

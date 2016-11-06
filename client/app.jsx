@@ -26,13 +26,44 @@ $(function () {
 
     var ItemView = React.createClass({
         render: function () {
+            function getJson (jsonPath){
+                var result = null;
+
+                $.ajax({
+                    url: jsonPath,
+                    async: false,
+                    dataType: "json",
+                    success: function(data){
+                        result = data;
+                    }});
+                return result;
+            }
+
+            let colors = new Array(18);
+            let jsonPath = 'schemes' + this.props.item.path + '.json';
+            let {name, author, color, foreground, background} = getJson(jsonPath);
+            colors[0] = <div key="0" className="color" style={{color: background, background: foreground}}>
+                <div className="text">Foreground</div>
+                <div className="helper"></div>
+            </div>;
+            colors[1] = <div key="1" className="color" style={{color: foreground, background: background}}>
+                <div className="text">Background</div>
+                <div className="helper"></div>
+            </div>;
+            for (let i = 2; i < 18; i++) {
+                colors[i] = <div className="color" key={i} style={{background: color[i - 2]}}/>
+            }
             return (
-                <div>
-                    <p><strong>Name:</strong> {this.props.item.name}</p>
-                    <p><button onClick={() => {
+                <div className="schemes">
+                    <p><strong>Name:</strong> {name}</p>
+                    <p><strong>Author:</strong> {author}</p>
+                    <button onClick={() => {
                         var pathToCss = 'css' + this.props.item.path + '.css';
-                        updateCss(pathToCss);
-                    }}>Apply Scheme</button></p>
+                        updateCss(pathToCss.replace(/ /g, '-').replace(/---/g, '-'));
+                    }}>Apply Scheme</button>
+                    <div className="colors">
+                        {colors}
+                    </div>
                 </div>
             );
         }
@@ -105,12 +136,10 @@ var Cell = React.createClass({
 var Terminal = React.createClass({
 
     getInitialState() {
-        let width = DEFAULT_WIDTH;
-        let height = DEFAULT_HEIGHT;
         return {
             cursor: {'x': 0, 'y': 0},
-            width: width,
-            height: height,
+            width: DEFAULT_WIDTH,
+            height: DEFAULT_HEIGHT
         };
     },
 
