@@ -50,8 +50,9 @@ $(function () {
                 <div className="text">Background</div>
                 <div className="helper"></div>
             </div>;
-            for (let i = 2; i < 18; i++) {
-                colors[i] = <div className="color" key={i} style={{background: color[i - 2]}}/>
+            for (let i = 2; i < 18; i+=2) {
+                colors[i] = <div className="color" key={i} style={{background: color[i / 2 - 1]}}/>
+                colors[i + 1] = <div className="color" key={i + 1} style={{background: color[i / 2 + 7]}}/>
             }
             return (
                 <div className="schemes">
