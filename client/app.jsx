@@ -1,14 +1,12 @@
-var $ = require('jquery');
-var React = require('react');
-var Ranger = require('../lib');
+const $ = require('jquery');
+const React = require('react');
+const Ranger = require('../lib');
 
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
 const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
 
 const serverUrl = 'ws://0.0.0.0:8080/ws';
-
-var currentCss = DEFAULT_CSS;
 
 $(function () {
     function updateCss(css) {
@@ -20,22 +18,23 @@ $(function () {
             href: css
         }).appendTo("head");
     }
-    var store = Ranger.createStore(null, function (item) {
+    let store = Ranger.createStore(null, function (item) {
         console.log('opening', item);
     });
 
-    var ItemView = React.createClass({
+    let ItemView = React.createClass({
         render: function () {
-            function getJson (jsonPath){
-                var result = null;
+            function getJson(jsonPath) {
+                let result = null;
 
                 $.ajax({
                     url: jsonPath,
                     async: false,
                     dataType: "json",
-                    success: function(data){
+                    success: function (data) {
                         result = data;
-                    }});
+                    }
+                });
                 return result;
             }
 
@@ -50,8 +49,8 @@ $(function () {
                 <div className="text">Background</div>
                 <div className="helper"></div>
             </div>;
-            for (let i = 2; i < 18; i+=2) {
-                colors[i] = <div className="color" key={i} style={{background: color[i / 2 - 1]}}/>
+            for (let i = 2; i < 18; i += 2) {
+                colors[i] = <div className="color" key={i} style={{background: color[i / 2 - 1]}}/>;
                 colors[i + 1] = <div className="color" key={i + 1} style={{background: color[i / 2 + 7]}}/>
             }
             return (
@@ -59,9 +58,10 @@ $(function () {
                     <p><strong>Name:</strong> {name}</p>
                     <p><strong>Author:</strong> {author}</p>
                     <button onClick={() => {
-                        var pathToCss = 'css' + this.props.item.path + '.css';
+                        let pathToCss = 'css' + this.props.item.path + '.css';
                         updateCss(pathToCss.replace(/ /g, '-').replace(/---/g, '-'));
-                    }}>Apply Scheme</button>
+                    }}>Apply Scheme
+                    </button>
                     <div className="colors">
                         {colors}
                     </div>
@@ -85,7 +85,7 @@ $(function () {
     $("#terminal").focus()
 });
 
-var Cell = React.createClass({
+let Cell = React.createClass({
     getInitialState: function () {
         return {
             symbol: ' ',
@@ -94,33 +94,33 @@ var Cell = React.createClass({
         };
     },
 
-    setFgColor: function(color) {
+    setFgColor: function (color) {
         this.setState({
             fg: 'fg-' + color
         });
     },
 
-    setBgColor: function(color) {
+    setBgColor: function (color) {
         this.setState({
             bg: 'bg-' + color
         });
     },
 
-    setDefaultColor: function() {
+    setDefaultColor: function () {
         this.setState({
             fg: 'fg-default',
             bg: 'bg-default'
         });
     },
 
-    setReverseColor: function() {
+    setReverseColor: function () {
         this.setState({
             fg: 'fg-reverse',
             bg: 'bg-reverse'
         });
     },
 
-    setSymbol: function(sym) {
+    setSymbol: function (sym) {
         this.setState({
             symbol: sym
         });
@@ -134,7 +134,7 @@ var Cell = React.createClass({
 
 });
 
-var Terminal = React.createClass({
+let Terminal = React.createClass({
 
     getInitialState() {
         return {
@@ -151,7 +151,11 @@ var Terminal = React.createClass({
     start() {
         let socket = new WebSocket(serverUrl);
         socket.onmessage = (e) => this.receiveMessage(JSON.parse(e.data));
-        socket.onclose = () => {setTimeout(() => {this.start()}, 5000)};
+        socket.onclose = () => {
+            setTimeout(() => {
+                this.start()
+            }, 5000)
+        };
         this.setState({socket: socket});
     },
 
@@ -220,7 +224,7 @@ var Terminal = React.createClass({
     },
 
     onKeyPress(e) {
-        var message = keyToMessage(e);
+        let message = keyToMessage(e);
         if (message) {
             this.send(message, 'command');
         }
@@ -279,7 +283,7 @@ function keyToMessage(e) {
     }
 
     console.log('pressed key ' + e.which);
-    var message = null;
+    let message = null;
     if (e.which == 8) { // backspace
         message = ctrl.BACKSPACE;
     } else if (e.which == 9) { // tab
@@ -311,7 +315,7 @@ function keyToMessage(e) {
     } else if (e.which == 46) { // delete
         message = ctrl.DEL;
     } else if (e.which >= 112 && e.which <= 123) { // F1 -- F12
-        var number = e.which - 111;
+        let number = e.which - 111;
         message = fKeys[number];
     } else if (e.ctrlKey) { // ctrl+...
         if (e.keyCode >= 65 && e.keyCode <= 90) { // keycode in ['A'..'Z']
