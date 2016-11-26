@@ -1,6 +1,7 @@
 // styles for terminal window
 
-#terminal { display: inline-block; }
+#terminal { 
+  display: inline-block; }
 
 #screen {
   border-collapse: collapse;
@@ -8,7 +9,13 @@
 }
 
 #screen td {
-  font-size: medium;
+
+  @media (max-width: 1920px) {
+    font-size: medium;
+  }
+  @media (max-width: 1280px) {
+    font-size: smaller;
+  }
   font-family: PT Mono, monospace;
   border-color: black;
   width: .6em;
