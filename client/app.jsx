@@ -4,7 +4,7 @@ const Ranger = require('../lib');
 
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
-const DEFAULT_CSS = 'schemes/xcolors.net/dkeg - panels.json';
+const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
 
 const serverUrl = 'ws://0.0.0.0:8080/ws';
 
@@ -49,8 +49,8 @@ $(function () {
                     <p><strong>Name:</strong> {name}</p>
                     <p><strong>Author:</strong> {author}</p>
                     <button onClick={() => {
-                        let pathToCss = 'schemes/' + this.props.item.path + '.json';
-                        updateCss(pathToCss);
+                        let pathToCss = 'css' + this.props.item.path + '.css';
+                        updateCss(pathToCss.replace(/ /g, '-').replace(/---/g, '-'));
                     }}>Apply Scheme
                     </button>
                     <div className="colors">
@@ -107,17 +107,13 @@ const сolorStyles = {
 };
 
 function updateCss(css) {
-    let {name, author, color, foreground, background} = getJson(css);
-    for (let i = 0; i < 8; i++) {
-        $(сolorStyles[i]).css('color', color[i])
-    }
-    for (let i = 8; i < 16; i++) {
-        $(сolorStyles[i]).css('background-color', color[i])
-    }
-    $('#screen td.fg-default').css('color', foreground);
-    $('#screen td.bg-default').css('background-color', background);
-    $('#screen td.fg-reverse').css('color', background);
-    $('#screen td.bg-reverse').css('background-color', foreground);
+    $("<link/>", {
+        rel: "stylesheet",
+    }).remove();
+    $("<link/>", {
+        rel: "stylesheet",
+        href: css
+    }).appendTo("head");
 }
 
 function getJson (jsonPath){
