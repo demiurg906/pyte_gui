@@ -4,20 +4,11 @@ const Ranger = require('../lib');
 
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
-const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
+const DEFAULT_CSS = 'schemes/xcolors.net/dkeg - panels.json';
 
 const serverUrl = 'ws://0.0.0.0:8080/ws';
 
 $(function () {
-    function updateCss(css) {
-        $("<link/>", {
-            rel: "stylesheet",
-        }).remove();
-        $("<link/>", {
-            rel: "stylesheet",
-            href: css
-        }).appendTo("head");
-    }
     let store = Ranger.createStore(null, function (item) {
         console.log('opening', item);
     });
@@ -42,11 +33,11 @@ $(function () {
             let jsonPath = 'schemes' + this.props.item.path + '.json';
             let {name, author, color, foreground, background} = getJson(jsonPath);
             colors[0] = <div key="0" className="color" style={{color: background, background: foreground}}>
-                <div className="text">Foreground</div>
+                <div className="text">FG</div>
                 <div className="helper"></div>
             </div>;
             colors[1] = <div key="1" className="color" style={{color: foreground, background: background}}>
-                <div className="text">Background</div>
+                <div className="text">BG</div>
                 <div className="helper"></div>
             </div>;
             for (let i = 2; i < 18; i += 2) {
@@ -58,8 +49,8 @@ $(function () {
                     <p><strong>Name:</strong> {name}</p>
                     <p><strong>Author:</strong> {author}</p>
                     <button onClick={() => {
-                        let pathToCss = 'css' + this.props.item.path + '.css';
-                        updateCss(pathToCss.replace(/ /g, '-').replace(/---/g, '-'));
+                        let pathToCss = 'schemes/' + this.props.item.path + '.json';
+                        updateCss(pathToCss);
                     }}>Apply Scheme
                     </button>
                     <div className="colors">
@@ -79,11 +70,68 @@ $(function () {
     $.get('schemes/index.json').then(function (content) {
         store.setRootDir(Ranger.parseList(content));
     });
-
     updateCss(DEFAULT_CSS);
-
     $("#terminal").focus()
 });
+
+function getJson (jsonPath){
+    let result = null;
+
+    $.ajax({
+        url: jsonPath,
+        async: false,
+        dataType: "json",
+        success: function(data){
+            result = data;
+        }});
+    return result;
+}
+
+const сolorStyles = {
+    0: '#screen td.fg-black',
+    1: '#screen td.fg-red',
+    2: '#screen td.fg-green',
+    3: '#screen td.fg-brown',
+    4: '#screen td.fg-blue',
+    5: '#screen td.fg-magenta',
+    6: '#screen td.fg-cyan',
+    7: '#screen td.fg-white',
+    8: '#screen td.bg-black',
+    9: '#screen td.bg-red',
+    10: '#screen td.bg-green',
+    11: '#screen td.bg-brown',
+    12: '#screen td.bg-blue',
+    13: '#screen td.bg-magenta',
+    14: '#screen td.bg-cyan',
+    15: '#screen td.bg-white'
+};
+
+function updateCss(css) {
+    let {name, author, color, foreground, background} = getJson(css);
+    for (let i = 0; i < 8; i++) {
+        $(сolorStyles[i]).css('color', color[i])
+    }
+    for (let i = 8; i < 16; i++) {
+        $(сolorStyles[i]).css('background-color', color[i])
+    }
+    $('#screen td.fg-default').css('color', foreground);
+    $('#screen td.bg-default').css('background-color', background);
+    $('#screen td.fg-reverse').css('color', background);
+    $('#screen td.bg-reverse').css('background-color', foreground);
+}
+
+function getJson (jsonPath){
+    var result = null;
+
+    $.ajax({
+        url: jsonPath,
+        async: false,
+        dataType: "json",
+        success: function(data){
+            result = data;
+        }});
+    return result;
+}
 
 let Cell = React.createClass({
     getInitialState: function () {

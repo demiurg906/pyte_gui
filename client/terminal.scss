@@ -1,5 +1,7 @@
 // styles for terminal window
 
+@import "sizes";
+
 #terminal { 
   display: inline-block; }
 
@@ -10,10 +12,10 @@
 
 #screen td {
 
-  @media (max-width: 1920px) {
+  @media (max-width: $medium-size) {
     font-size: medium;
   }
-  @media (max-width: 1280px) {
+  @media (max-width: $smaller-size) {
     font-size: smaller;
   }
   font-family: PT Mono, monospace;

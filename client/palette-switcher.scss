@@ -1,5 +1,7 @@
 // styles for palette switcher
 
+@import "sizes";
+
 body {
   margin: 0;
   font-family: sans-serif;
@@ -38,8 +40,16 @@ body {
 
   .pane-container {
     position: absolute;
-    top: 0;
-    left: 960px;
+    @media (max-width: $medium-size) {
+      top: 0;
+      left: 960px;
+      font-size: medium;
+    }
+    @media (max-width: $smaller-size) {
+      top: 425px;
+      left: 0;
+      font-size: smaller;
+    }
     right: 0;
     bottom: $status-height;
     border-bottom: 1px solid #ccc;
@@ -52,8 +62,14 @@ body {
     position: relative;
     display: inline-block;
     width: 33.33%;
-    max-width: 400px;
-    min-width: 200px;
+    @media (max-width: $medium-size) {
+      max-width: 400px;
+      min-width: 200px;
+    }
+    @media (max-width: $smaller-size) {
+      max-width: 200px;
+      min-width: 100px;
+    }
     height: 100%;
     padding: 10px;
     box-sizing: border-box;
@@ -115,7 +131,13 @@ body {
   }
 
   .file, .directory {
-    line-height: 40px;
+    @media (max-width: $medium-size) {
+      line-height: 40px;
+    }
+    @media (max-width: $smaller-size) {
+      line-height: 25px;
+    }
+
     padding: 0 10px;
 
     &:active {
@@ -150,15 +172,22 @@ body {
     .color {
       float: left;
       width: 50%;
-      height: 30px;
+      @media (max-width: $medium-size) {
+        height: 30px;
+      }
+      @media (max-width: $smaller-size) {
+        height: 15px;
+      }
+
       border-bottom: $border solid transparent;
       box-sizing: border-box;
       text-align: center;
-    }
 
-    .text {
-      display:inline-block;
-      vertical-align:middle;
+      .text {
+        font-weight: bold;
+        display:inline-block;
+        vertical-align:middle;
+      }
     }
 
     .helper {
