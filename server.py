@@ -15,7 +15,7 @@ from aiohttp import web
 DEFAULT_SIZE = (80, 24)
 size = DEFAULT_SIZE
 
-exe = shlex.split('bash -i')
+exe = shlex.split('sudo -H -u guest bash -i')
 
 
 class Terminal:
@@ -73,6 +73,9 @@ async def websocket_handler(request):
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
+    # cd  to the guest home location
+    p_out.write('cd ~\n'.encode() + b'\x0c')
+
     def read_char(stream, buffsize=65536):
         try:
             return stream.read(buffsize)
@@ -94,6 +97,7 @@ async def websocket_handler(request):
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
                 print('char: {}, byte: {}'.format(msg.data, msg.data.encode()))
+                print(msg.data)
                 p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
