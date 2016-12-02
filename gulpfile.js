@@ -8,13 +8,13 @@ const source = require('vinyl-source-stream');
 const reactify = require('reactify');
 const browserify = require('browserify');
 const watchify = require('watchify');
-let uglify = require('gulp-uglify');
+const uglify = require('gulp-uglify');
 const shell = require('gulp-shell');
 const postcss = require('gulp-postcss');
 
 gulp.task('run-server', ['client/lib', 'client/style'], shell.task(['python3 server.py'], verbose=true));
 
-gulp.task('default', ['package']);
+gulp.task('default', ['run-server']);
 
 gulp.task('package', function () {
     return gulp.src('lib/**/*.js*')
@@ -22,7 +22,7 @@ gulp.task('package', function () {
         .pipe(gulp.dest('pkg'));
 });
 
-gulp.task('client/lib', ['default'], function () {
+gulp.task('client/lib', ['package'], function () {
     const bundler = watchify(browserify({
         cache: {},
         packageCache: {},
@@ -49,7 +49,7 @@ gulp.task('client/lib', ['default'], function () {
     return rebundle();
 });
 
-gulp.task('client/style', ['default'], function () {
+gulp.task('client/style', ['package'], function () {
     return gulp.src('client/*.scss')
         .pipe(sass({errLogToConsole: true, outputStyle: 'compressed'}))
         // .pipe(autoprefixer())
