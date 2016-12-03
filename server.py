@@ -3,6 +3,7 @@ import json
 import os
 import pty
 import random
+import shelve
 import shlex
 import subprocess
 
@@ -13,20 +14,26 @@ from aiohttp import WSCloseCode
 from aiohttp import web
 
 DEFAULT_SIZE = (80, 24)
-size = DEFAULT_SIZE
 
-exe = shlex.split('sudo -H -u guest bash -i')
+exe = shlex.split('bash -i')
+# exe = shlex.split('sudo -H -u guest bash -i')
+
+pyte.Stream.escape[b'P'] = 'prev_page'
+pyte.Stream.escape[b'N'] = 'next_page'
+
+users_screens = shelve.open('usersScreens.db')
 
 
 class Terminal:
-    def __init__(self, size):
-        self.screen = pyte.DiffScreen(*size)
-        self.screen.set_mode(pyte.screens.mo.LNM)
+    def __init__(self, size, history_lines=0):
+        self.size = size
+        self.screen = pyte.HistoryScreen(*size, history_lines, ratio=history_lines)
+        # self.screen.set_mode(pyte.screens.mo.LNM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
+        self.saved_state_exist = False
 
     def feed(self, data):
-        # self.screen.dirty.clear()
         self.stream.feed(data)
 
     def get_screen(self):
@@ -35,14 +42,17 @@ class Terminal:
             screen += '{:2d}: {}\n'.format(i, line)
         return screen
 
-    def get_json_screen(self):
-        res = json.dumps({
+    def get_json_screen(self, dirty=False):
+        res = {
             'screen': self.screen.buffer,
             'cursor': {'x': self.screen.cursor.x, 'y': self.screen.cursor.y},
-            'dirty': list(self.screen.dirty)
-        })
+        }
+        if not dirty:
+            res['dirty'] = list(self.screen.dirty)
+        else:
+            res['dirty'] = list(range(self.size[1]))
         self.screen.dirty.clear()
-        return res
+        return json.dumps(res)
 
 
 async def websocket_handler(request):
@@ -57,7 +67,16 @@ async def websocket_handler(request):
     request.app['websockets'].append(ws)
 
     width, height = size = DEFAULT_SIZE
-    terminal = Terminal(size)
+    if ws_id in users_screens:
+        terminal = Terminal(size, height * 2)
+        old_buffer = users_screens[ws_id]
+        for line in old_buffer:
+            terminal.screen.history.top.append(line)
+        terminal.saved_state_exist = True
+        terminal.stream.feed(pyte.screens.ctrl.ESC + b'P')
+    else:
+        terminal = Terminal(size)
+
     ws.send_str(terminal.get_json_screen())
 
     master_fd, slave_fd = pty.openpty()
@@ -65,16 +84,15 @@ async def websocket_handler(request):
                          stderr=subprocess.STDOUT, close_fds=True,
                          env={
                              'TERM': 'linux',
-                              # 'TERM': 'vt220',
-                              'LC_ALL': 'en_GB.UTF-8',
-                              'COLUMNS': str(width),
-                              'LINES': str(height)})
+                             'LC_ALL': 'en_GB.UTF-8',
+                             'COLUMNS': str(width),
+                             'LINES': str(height)})
 
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
     # cd  to the guest home location
-    p_out.write('cd ~\n'.encode() + b'\x0c')
+    # p_out.write('cd ~\n'.encode() + b'\x0c')
 
     def read_char(stream, buffsize=65536):
         try:
@@ -87,6 +105,9 @@ async def websocket_handler(request):
 
     def process_out_handler():
         data = read_char(p_out)
+        # if terminal.saved_state_exist:
+        #     data = data.strip() + b'\n'
+        #     terminal.saved_state_exist = False
         terminal.feed(data)
         answer = terminal.get_json_screen()
         ws.send_str(answer)
@@ -96,8 +117,8 @@ async def websocket_handler(request):
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                print('char: {}, byte: {}'.format(msg.data, msg.data.encode()))
-                print(msg.data)
+                # print('char: {}, byte: {}'.format(msg.data, msg.data.encode()))
+                # print(msg.data)
                 p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
@@ -107,37 +128,16 @@ async def websocket_handler(request):
         p.kill()
         p_out.close()
         request.app['websockets'].remove(ws)
+        # users_screens[ws_id] = terminal.screen.buffer
         print('websocket connection closed')
 
-    return ws
-
-
-async def ws_command_line_handler(request):
-    ws = web.WebSocketResponse()
-    await ws.prepare(request)
-    request.app['websockets'].append(ws)
-
-    terminal = Terminal()
-    ws.send_str(terminal.get_json_screen())
-
-    async for msg in ws:
-        if msg.type == aiohttp.WSMsgType.TEXT:
-            if msg.data == 'close':
-                await ws.close()
-            else:
-                terminal.feed(msg.data)
-                answer = terminal.get_json_screen()
-                ws.send_str(answer)
-        elif msg.type == aiohttp.WSMsgType.ERROR:
-            print('ws connection closed with exception %s' %
-                  ws.exception())
-    print('websocket connection closed')
     return ws
 
 
 async def on_shutdown(app):
     for ws in app['websockets']:
         await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+    users_screens.close()
 
 
 def generate_id():
@@ -149,12 +149,11 @@ def start_server():
     app = web.Application()
     app['websockets'] = []
     app.router.add_get('/ws', websocket_handler)
-    # app.router.add_get('/ws', ws_command_line_handler)
     app.router.add_static('/', './client/static', show_index=True)
     app.on_shutdown.append(on_shutdown)
 
     web.run_app(app)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     start_server()
