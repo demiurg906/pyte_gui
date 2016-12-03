@@ -128,7 +128,7 @@ async def websocket_handler(request):
         p.kill()
         p_out.close()
         request.app['websockets'].remove(ws)
-        # users_screens[ws_id] = terminal.screen.buffer
+        users_screens[ws_id] = terminal.screen.buffer
         print('websocket connection closed')
 
     return ws
