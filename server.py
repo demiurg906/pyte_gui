@@ -18,16 +18,13 @@ DEFAULT_SIZE = (80, 24)
 exe = shlex.split('bash -i')
 # exe = shlex.split('sudo -H -u guest bash -i')
 
-pyte.Stream.escape[b'P'] = 'prev_page'
-pyte.Stream.escape[b'N'] = 'next_page'
-
 users_screens = shelve.open('usersScreens.db')
 
 
 class Terminal:
     def __init__(self, size, history_lines=0):
         self.size = size
-        self.screen = pyte.HistoryScreen(*size, history_lines, ratio=history_lines)
+        self.screen = pyte.DiffScreen(*size)
         # self.screen.set_mode(pyte.screens.mo.LNM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
@@ -68,12 +65,10 @@ async def websocket_handler(request):
 
     width, height = size = DEFAULT_SIZE
     if ws_id in users_screens:
-        terminal = Terminal(size, height * 2)
-        old_buffer = users_screens[ws_id]
-        for line in old_buffer:
-            terminal.screen.history.top.append(line)
+        terminal = Terminal(size, height)
+        terminal.screen = users_screens[ws_id]
+        terminal.stream.attach(terminal.screen)
         terminal.saved_state_exist = True
-        terminal.stream.feed(pyte.screens.ctrl.ESC + b'P')
     else:
         terminal = Terminal(size)
 
@@ -128,7 +123,7 @@ async def websocket_handler(request):
         p.kill()
         p_out.close()
         request.app['websockets'].remove(ws)
-        users_screens[ws_id] = terminal.screen.buffer
+        users_screens[ws_id] = terminal.screen
         print('websocket connection closed')
 
     return ws
