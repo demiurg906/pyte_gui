@@ -20,6 +20,8 @@ exe = shlex.split('bash -i')
 
 users_screens = shelve.open('usersScreens.db')
 
+shutting_down = False
+
 
 class Terminal:
     def __init__(self, size, history_lines=0):
@@ -61,7 +63,7 @@ async def websocket_handler(request):
         ws.set_cookie(name='id', value=ws_id)
     print('client id = {}'.format(ws_id))
     await ws.prepare(request)
-    request.app['websockets'].append(ws)
+    request.app['websockets'].add(asyncio.Task.current_task())
 
     width, height = size = DEFAULT_SIZE
     if ws_id in users_screens:
@@ -118,20 +120,30 @@ async def websocket_handler(request):
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
                       ws.exception())
+    except asyncio.CancelledError:
+        print('websocket cancelled')
     finally:
         loop.remove_reader(p_out)
         p.kill()
         p_out.close()
-        request.app['websockets'].remove(ws)
+        if not shutting_down:
+            request.app['websockets'].remove(asyncio.Task.current_task())
         users_screens[ws_id] = terminal.screen
         print('websocket connection closed')
+    await ws.close()
 
     return ws
 
 
-async def on_shutdown(app):
-    for ws in app['websockets']:
-        await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+async def on_shutdown(app: web.Application):
+    global shutting_down
+    shutting_down = True
+    for task in app['websockets']:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
     users_screens.close()
 
 
@@ -142,7 +154,7 @@ def generate_id():
 
 def start_server():
     app = web.Application()
-    app['websockets'] = []
+    app['websockets'] = set()
     app.router.add_get('/ws', websocket_handler)
     app.router.add_static('/', './client/static', show_index=True)
     app.on_shutdown.append(on_shutdown)
