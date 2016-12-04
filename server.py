@@ -10,7 +10,6 @@ import subprocess
 import aiohttp
 import asyncio
 import pyte
-from aiohttp import WSCloseCode
 from aiohttp import web
 
 DEFAULT_SIZE = (80, 24)
@@ -24,10 +23,9 @@ shutting_down = False
 
 
 class Terminal:
-    def __init__(self, size, history_lines=0):
+    def __init__(self, size):
         self.size = size
         self.screen = pyte.DiffScreen(*size)
-        # self.screen.set_mode(pyte.screens.mo.LNM)
         self.stream = pyte.Stream()
         self.stream.attach(self.screen)
         self.saved_state_exist = False
@@ -88,9 +86,6 @@ async def websocket_handler(request):
     os.close(slave_fd)
     p_out = os.fdopen(master_fd, 'w+b', 0)
 
-    # cd  to the guest home location
-    # p_out.write('cd ~\n'.encode() + b'\x0c')
-
     def read_char(stream, buffsize=65536):
         try:
             return stream.read(buffsize)
@@ -102,9 +97,6 @@ async def websocket_handler(request):
 
     def process_out_handler():
         data = read_char(p_out)
-        # if terminal.saved_state_exist:
-        #     data = data.strip() + b'\n'
-        #     terminal.saved_state_exist = False
         terminal.feed(data)
         answer = terminal.get_json_screen()
         ws.send_str(answer)
@@ -114,8 +106,6 @@ async def websocket_handler(request):
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
-                # print('char: {}, byte: {}'.format(msg.data, msg.data.encode()))
-                # print(msg.data)
                 p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception %s' %
