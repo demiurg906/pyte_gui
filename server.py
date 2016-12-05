@@ -10,6 +10,7 @@ import subprocess
 import aiohttp
 import asyncio
 import pyte
+import sys
 from aiohttp import web
 
 DEFAULT_SIZE = (80, 24)
@@ -65,7 +66,7 @@ async def websocket_handler(request):
 
     width, height = size = DEFAULT_SIZE
     if ws_id in users_screens:
-        terminal = Terminal(size, height)
+        terminal = Terminal(size)
         terminal.screen = users_screens[ws_id]
         terminal.stream.attach(terminal.screen)
         terminal.saved_state_exist = True
@@ -138,19 +139,20 @@ async def on_shutdown(app: web.Application):
 
 
 def generate_id():
-    # TODO: make better id choosing
-    return random.randint(1, 1000)
+    return str(random.randint(1, 10000000))
 
 
-def start_server():
+def start_server(host='0.0.0.0'):
     app = web.Application()
     app['websockets'] = set()
     app.router.add_get('/ws', websocket_handler)
     app.router.add_static('/', './client/static', show_index=True)
     app.on_shutdown.append(on_shutdown)
 
-    web.run_app(app)
+    web.run_app(app, host=host)
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        start_server(sys.argv[1])
     start_server()
