@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+message ScreenState {
+    repeated ScreenLine lines = 1;
+    int32 cursor_x = 3;
+    int32 cursor_y = 4;
+}
+
+message ScreenLine {
+    int32 i = 1;
+    repeated ScreenCell cells = 2;
+}
+
+message ScreenCell {
+    string character = 1;
+    bool reversed = 2;
+    Color fg_color = 3;
+    Color bg_color = 4;
+}
+
+enum Color {
+        BLACK = 0;
+        RED = 1;
+        GREEN = 2;
+        BROWN = 3;
+        BLUE = 4;
+        MAGNETA = 5;
+        CYAN = 6;
+        WHITE = 7;
+        DEFAULT = 8;
+    }

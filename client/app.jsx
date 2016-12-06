@@ -2,11 +2,17 @@ const $ = require('jquery');
 const React = require('react');
 const Ranger = require('../lib');
 
+const ProtoBuf = require("protobufjs");
+
+
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
 const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
 
-const serverUrl = 'ws://0.0.0.0:8080/ws';
+const serverUrl = 'ws://' + window.location.host + '/ws';
+
+// protocol initialization
+const ScreenState = ProtoBuf.loadProtoFile('screen-message.proto').build("ScreenState");
 
 $(function () {
     let store = Ranger.createStore(null, function (item) {
@@ -74,38 +80,6 @@ $(function () {
     $("#terminal").focus()
 });
 
-function getJson (jsonPath){
-    let result = null;
-
-    $.ajax({
-        url: jsonPath,
-        async: false,
-        dataType: "json",
-        success: function(data){
-            result = data;
-        }});
-    return result;
-}
-
-const сolorStyles = {
-    0: '#screen td.fg-black',
-    1: '#screen td.fg-red',
-    2: '#screen td.fg-green',
-    3: '#screen td.fg-brown',
-    4: '#screen td.fg-blue',
-    5: '#screen td.fg-magenta',
-    6: '#screen td.fg-cyan',
-    7: '#screen td.fg-white',
-    8: '#screen td.bg-black',
-    9: '#screen td.bg-red',
-    10: '#screen td.bg-green',
-    11: '#screen td.bg-brown',
-    12: '#screen td.bg-blue',
-    13: '#screen td.bg-magenta',
-    14: '#screen td.bg-cyan',
-    15: '#screen td.bg-white'
-};
-
 function updateCss(css) {
     $("<link/>", {
         rel: "stylesheet",
@@ -114,19 +88,6 @@ function updateCss(css) {
         rel: "stylesheet",
         href: css
     }).appendTo("head");
-}
-
-function getJson (jsonPath){
-    var result = null;
-
-    $.ajax({
-        url: jsonPath,
-        async: false,
-        dataType: "json",
-        success: function(data){
-            result = data;
-        }});
-    return result;
 }
 
 let Cell = React.createClass({
@@ -194,7 +155,10 @@ let Terminal = React.createClass({
 
     start() {
         let socket = new WebSocket(serverUrl);
-        socket.onmessage = (e) => this.receiveMessage(JSON.parse(e.data));
+        socket.binaryType = 'arraybuffer';
+
+        socket.onmessage = (e) => this.receiveMessage(ScreenState.decode(e.data));
+
         socket.onclose = () => {
             setTimeout(() => {
                 this.start()
@@ -212,29 +176,35 @@ let Terminal = React.createClass({
     },
 
     receiveMessage(message) {
-        let {cursor: {x: cx, y: cy}, screen, dirty} = message;
+        let cx =  message.cursor_x;
+        let cy = message.cursor_y;
         if (cx == this.state.width) {
             cx = 0;
             cy++;
         }
-
         this.eraseCursor();
-        for (let i of dirty) {
+        for (let screenLine of message.lines) {
+            let i = screenLine.i;
+            let cells = screenLine.cells;
             for (let j = 0; j < this.state.width; j++) {
                 // const cell = this.screen[i][j];
                 const cell = this.getCell(i, j);
-                let [data, fg, bg,
-                    bold, italics, underscore, strikethrough,
-                    reverse] = screen[i][j];
+                let {character: data,
+                    reversed: reversed,
+                    fg_color: fg,
+                    bg_color: bg } = cells[j];
 
-                // console.log('cell ' + cell.props.x + ' ' + cell.props.y);
+                fg = protocolColors[fg];
+                bg = protocolColors[bg];
+
                 cell.setSymbol(data);
 
                 cell.setFgColor(fg);
                 cell.setBgColor(bg);
 
-                if (reverse)
-                    cell.setReverse();
+                if (reversed) {
+                    cell.setReverseColor();
+                }
             }
         }
         this.updateCursor(cx, cy);
@@ -245,7 +215,6 @@ let Terminal = React.createClass({
             cursor: {x: x, y: y}
         });
         if (y < this.state.height && x < this.state.width) {
-            // this.screen[y][x].setReverseColor();
             this.getCell(y, x).setReverseColor();
         }
     },
@@ -253,7 +222,6 @@ let Terminal = React.createClass({
     eraseCursor() {
         let {x, y} = this.state.cursor;
         if (y < this.state.height && x < this.state.width) {
-            // this.screen[y][x].setDefaultColor();
             this.getCell(y, x).setDefaultColor();
         }
     },
@@ -372,6 +340,50 @@ function keyToMessage(e) {
 
     return message;
 }
+
+function getJson (jsonPath){
+    let result = null;
+
+    $.ajax({
+        url: jsonPath,
+        async: false,
+        dataType: "json",
+        success: function(data){
+            result = data;
+        }});
+    return result;
+}
+
+const сolorStyles = {
+    0: '#screen td.fg-black',
+    1: '#screen td.fg-red',
+    2: '#screen td.fg-green',
+    3: '#screen td.fg-brown',
+    4: '#screen td.fg-blue',
+    5: '#screen td.fg-magenta',
+    6: '#screen td.fg-cyan',
+    7: '#screen td.fg-white',
+    8: '#screen td.bg-black',
+    9: '#screen td.bg-red',
+    10: '#screen td.bg-green',
+    11: '#screen td.bg-brown',
+    12: '#screen td.bg-blue',
+    13: '#screen td.bg-magenta',
+    14: '#screen td.bg-cyan',
+    15: '#screen td.bg-white'
+};
+
+const protocolColors = {
+    0: 'black',
+    1: 'red',
+    2: 'green',
+    3: 'brown',
+    4: 'blue',
+    5: 'magneta',
+    6: 'cyan',
+    7: 'white',
+    8: 'default'
+};
 
 const ctrl = {
     LF: '\n',

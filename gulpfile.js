@@ -12,7 +12,8 @@ const uglify = require('gulp-uglify');
 const shell = require('gulp-shell');
 const postcss = require('gulp-postcss');
 
-gulp.task('run-server', ['client/lib', 'client/style'], shell.task(['python3 server.py'], verbose=true));
+gulp.task('run-server', ['client/lib', 'client/style'],
+    shell.task(['python3 server.py'], verbose=true));
 
 gulp.task('default', ['run-server']);
 

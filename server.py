@@ -13,6 +13,8 @@ import pyte
 import sys
 from aiohttp import web
 
+import screen_message_pb2
+
 DEFAULT_SIZE = (80, 24)
 
 exe = shlex.split('bash -i')
@@ -49,8 +51,34 @@ class Terminal:
             res['dirty'] = list(self.screen.dirty)
         else:
             res['dirty'] = list(range(self.size[1]))
-        self.screen.dirty.clear()
+        # self.screen.dirty.clear()
         return json.dumps(res)
+
+    def get_screen_message(self, dirty=False):
+        screen_state = screen_message_pb2.ScreenState()
+
+        # cursor
+        screen_state.cursor_x = self.screen.cursor.x
+        screen_state.cursor_y = self.screen.cursor.y
+
+        # dirty lines
+        if not dirty:
+            dirty_lines = list(self.screen.dirty)
+        else:
+            dirty_lines = list(range(self.size[1]))
+
+        for line in dirty_lines:
+            screen_line = screen_state.lines.add()
+            screen_line.i = line
+            for cell in self.screen.buffer[line]:
+                screen_cell = screen_line.cells.add()
+                screen_cell.character = cell.data
+                screen_cell.reversed = cell.reverse
+                screen_cell.fg_color = proto_colors[cell.fg]
+                screen_cell.bg_color = proto_colors[cell.bg]
+        self.screen.dirty.clear()
+        # print(screen_state)
+        return screen_state.SerializeToString()
 
 
 async def websocket_handler(request):
@@ -73,7 +101,8 @@ async def websocket_handler(request):
     else:
         terminal = Terminal(size)
 
-    ws.send_str(terminal.get_json_screen())
+    ws.send_bytes(terminal.get_screen_message())
+    print(terminal.get_screen_message(), end='\n\n')
 
     master_fd, slave_fd = pty.openpty()
     p = subprocess.Popen(exe, stdin=slave_fd, stdout=slave_fd,
@@ -99,8 +128,9 @@ async def websocket_handler(request):
     def process_out_handler():
         data = read_char(p_out)
         terminal.feed(data)
-        answer = terminal.get_json_screen()
-        ws.send_str(answer)
+        answer = terminal.get_screen_message()
+        print(terminal.get_screen_message(), end='\n\n')
+        ws.send_bytes(answer)
 
     loop = asyncio.get_event_loop()
     loop.add_reader(p_out, process_out_handler)
@@ -151,6 +181,18 @@ def start_server(host='0.0.0.0'):
 
     web.run_app(app, host=host)
 
+
+proto_colors = {
+    "black": screen_message_pb2.BLACK,
+    "red": screen_message_pb2.RED,
+    "green": screen_message_pb2.GREEN,
+    "brown": screen_message_pb2.BROWN,
+    "blue": screen_message_pb2.BLUE,
+    "magenta": screen_message_pb2.MAGNETA,
+    "cyan": screen_message_pb2.CYAN,
+    "white": screen_message_pb2.WHITE,
+    "default": screen_message_pb2.DEFAULT
+}
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
