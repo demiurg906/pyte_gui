@@ -1,86 +1,48 @@
 const $ = require('jquery');
 const React = require('react');
-const Ranger = require('../lib');
 
 const ProtoBuf = require("protobufjs");
 
 
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
-const DEFAULT_CSS = "css/xcolors.net/dkeg-panels.css";
+const DEFAULT_CSS = "xcolors.net/dkeg-panels";
 
 const serverUrl = 'ws://' + window.location.host + '/ws';
 
 // protocol initialization
 const ScreenState = ProtoBuf.loadProtoFile('screen-message.proto').build("ScreenState");
 
+const paletteList = getJson('schemes/index.json');
+
 $(function () {
-    let store = Ranger.createStore(null, function (item) {
-        console.log('opening', item);
-    });
-
-    let ItemView = React.createClass({
-        render: function () {
-            function getJson(jsonPath) {
-                let result = null;
-
-                $.ajax({
-                    url: jsonPath,
-                    async: false,
-                    dataType: "json",
-                    success: function (data) {
-                        result = data;
-                    }
-                });
-                return result;
-            }
-
-            let colors = new Array(18);
-            let jsonPath = 'schemes' + this.props.item.path + '.json';
-            let {name, author, color, foreground, background} = getJson(jsonPath);
-            colors[0] = <div key="0" className="color" style={{color: background, background: foreground}}>
-                <div className="text">FG</div>
-                <div className="helper"></div>
-            </div>;
-            colors[1] = <div key="1" className="color" style={{color: foreground, background: background}}>
-                <div className="text">BG</div>
-                <div className="helper"></div>
-            </div>;
-            for (let i = 2; i < 18; i += 2) {
-                colors[i] = <div className="color" key={i} style={{background: color[i / 2 - 1]}}/>;
-                colors[i + 1] = <div className="color" key={i + 1} style={{background: color[i / 2 + 7]}}/>
-            }
-            return (
-                <div className="schemes">
-                    <p><strong>Name:</strong> {name}</p>
-                    <p><strong>Author:</strong> {author}</p>
-                    <button onClick={() => {
-                        let pathToCss = 'css' + this.props.item.path + '.css';
-                        updateCss(pathToCss.replace(/ /g, '-').replace(/---/g, '-'));
-                    }}>Apply Scheme
-                    </button>
-                    <div className="colors">
-                        {colors}
-                    </div>
-                </div>
-            );
-        }
-    });
+    updateCss(DEFAULT_CSS);
 
     React.render(
         <div>
             <Terminal/>
-            <Ranger store={store} view={ItemView} />
+            <div id="palette-switcher">
+                Samples of the palettes colors you can see <a href="http://terminal.sexy/">here</a>
+                <ul>{paletteList.map((palette) => <Palette name={palette}/>)}</ul>
+            </div>
         </div>, document.body);
-
-    $.get('schemes/index.json').then(function (content) {
-        store.setRootDir(Ranger.parseList(content));
-    });
     updateCss(DEFAULT_CSS);
     $("#terminal").focus()
 });
 
-function updateCss(css) {
+let Palette = React.createClass({
+    onClick: function () {
+        updateCss(this.props.name);
+        console.log(this.props.name + " palette chosen");
+    },
+
+    render: function () {
+        return <li onClick={this.onClick}>{this.props.name}</li>
+    }
+});
+
+function updateCss(palette) {
+    let css = 'css/' + palette + '.css';
     $("<link/>", {
         rel: "stylesheet",
     }).remove();

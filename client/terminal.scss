@@ -1,25 +1,18 @@
 // styles for terminal window
 
-@import "sizes";
-
-#terminal { 
-  display: inline-block; }
+#terminal {
+  display: inline-block;
+}
 
 #screen {
   border-collapse: collapse;
   border-color: black;
+
+  td {
+    font-family: PT Mono, monospace;
+    border-color: black;
+    width: .6em;
+    height: 1.2em;
+  }
 }
 
-#screen td {
-
-  @media (max-width: $medium-size) {
-    font-size: medium;
-  }
-  @media (max-width: $smaller-size) {
-    font-size: smaller;
-  }
-  font-family: PT Mono, monospace;
-  border-color: black;
-  width: .6em;
-  height: 1.2em;
-}

@@ -1,0 +1,24 @@
+@import "sizes";
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  @media (max-width: $size1) {
+    font-size: 22px;
+  }
+  @media (max-width: $size2) {
+    font-size: 20px;
+  }
+  @media (max-width: $size3) {
+    font-size: 16px;
+  }
+  @media (max-width: $size4) {
+    font-size: 12px;
+  }
+  @media (max-width: $size5) {
+    font-size: 10px;
+  }
+  @media (max-width: $size6) {
+    font-size: 8px;
+  }
+}

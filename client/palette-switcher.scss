@@ -1,201 +1,22 @@
 // styles for palette switcher
 
-@import "sizes";
+#palette-switcher {
+  //position: relative;
+  float: right;
+  overflow: scroll;
+  width: 20em;
+  height: 99vh;
 
-body {
-  margin: 0;
-  font-family: sans-serif;
+  ul {
+    list-style-type: none;
+  }
+
+  li {
+    cursor: pointer;
+  }
+
+  li:hover {
+    background-color: #9ea894;
+  }
 }
 
-/*
- * RECOMMENDED
- */
-
-.ranger {
-  $status-height: 30px;
-
-  cursor: default;
-  user-select: none;
-
-  // clearfix
-  .ranger:after {
-    content: '';
-    display: table;
-    clear: both;
-  }
-
-  // hide input
-  input {
-    position: absolute;
-    top: -20px;
-    left: -20px;
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  /*
-   * PANES
-   */
-
-  .pane-container {
-    position: absolute;
-    @media (max-width: $medium-size) {
-      top: 0;
-      left: 960px;
-      font-size: medium;
-    }
-    @media (max-width: $smaller-size) {
-      top: 425px;
-      left: 0;
-      font-size: smaller;
-    }
-    right: 0;
-    bottom: $status-height;
-    border-bottom: 1px solid #ccc;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-  }
-
-  .pane {
-    position: relative;
-    display: inline-block;
-    width: 33.33%;
-    @media (max-width: $medium-size) {
-      max-width: 400px;
-      min-width: 200px;
-    }
-    @media (max-width: $smaller-size) {
-      max-width: 200px;
-      min-width: 100px;
-    }
-    height: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-    border-right: 1px solid #ccc;
-    vertical-align: top;
-    white-space: normal;
-    word-wrap: break-word;
-  }
-
-  /*
-   * STATUS
-   */
-
-  .status {
-    position: absolute;
-    padding: 0 10px;
-    height: $status-height;
-    line-height: $status-height;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
-
-
-  /*
-   * ITEM LIST
-   */
-
-  .item-list {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  /*
-   * FILES AND DIRECTORIES
-   */
-
-  .pane .active {
-    background: #ccc;
-    color: #333;
-  }
-
-  &.focus .pane .active {
-    background: #444;
-    color: #fff;
-  }
-
-  .directory {
-    font-weight: bold;
-  }
-
-  .directory:after {
-    content: '/'
-  }
-
-  .file, .directory {
-    @media (max-width: $medium-size) {
-      line-height: 40px;
-    }
-    @media (max-width: $smaller-size) {
-      line-height: 25px;
-    }
-
-    padding: 0 10px;
-
-    &:active {
-      background: #eee;
-    }
-  }
-
-}
-
-.schemes {
-  padding: 20px;
-
-  height: 100%;
-
-  display: flex;
-  flex-direction: column;
-
-  h1 {
-    margin: 0;
-  }
-
-  $border: 5px;
-
-  button {
-    margin: 10px 0;
-  }
-
-  .colors {
-    //@extend #clearfix;
-    flex: 1;
-
-    .color {
-      float: left;
-      width: 50%;
-      @media (max-width: $medium-size) {
-        height: 30px;
-      }
-      @media (max-width: $smaller-size) {
-        height: 15px;
-      }
-
-      border-bottom: $border solid transparent;
-      box-sizing: border-box;
-      text-align: center;
-
-      .text {
-        font-weight: bold;
-        display:inline-block;
-        vertical-align:middle;
-      }
-    }
-
-    .helper {
-      display:inline-block;
-      vertical-align:middle;
-      height:100%;
-      width:0;
-    }
-  }
-
-}

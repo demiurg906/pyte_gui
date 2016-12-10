@@ -102,7 +102,6 @@ async def websocket_handler(request):
         terminal = Terminal(size)
 
     ws.send_bytes(terminal.get_screen_message())
-    print(terminal.get_screen_message(), end='\n\n')
 
     master_fd, slave_fd = pty.openpty()
     p = subprocess.Popen(exe, stdin=slave_fd, stdout=slave_fd,
