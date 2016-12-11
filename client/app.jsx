@@ -3,21 +3,24 @@ const React = require('react');
 
 const ProtoBuf = require("protobufjs");
 
-
+// default sizes of the terminal screen
 const DEFAULT_WIDTH = 80;
 const DEFAULT_HEIGHT = 24;
-const DEFAULT_CSS = "xcolors.net/dkeg-panels";
 
+// name of default palette
+const DEFAULT_PALETTE = "xcolors.net/dkeg-panels";
+
+// address of server
 const serverUrl = 'ws://' + window.location.host + '/ws';
 
 // protocol initialization
 const ScreenState = ProtoBuf.loadProtoFile('screen-message.proto').build("ScreenState");
 
+// list of all available palettes
 const paletteList = getJson('schemes/index.json');
 
+// main function that initialize all elements on the client page
 $(function () {
-    updateCss(DEFAULT_CSS);
-
     React.render(
         <div>
             <Terminal/>
@@ -26,10 +29,13 @@ $(function () {
                 <ul>{paletteList.map((palette) => <Palette name={palette}/>)}</ul>
             </div>
         </div>, document.body);
-    updateCss(DEFAULT_CSS);
+    updateCss(DEFAULT_PALETTE);
     $("#terminal").focus()
 });
 
+/**
+ * Class that represents palette in the palette-switcher list
+ */
 let Palette = React.createClass({
     onClick: function () {
         updateCss(this.props.name);
@@ -41,68 +47,33 @@ let Palette = React.createClass({
     }
 });
 
+/**
+ * Function that change color scheme according to the chosen palette
+ * @param {string} palette - Name of chosen palette
+ */
 function updateCss(palette) {
     let css = 'css/' + palette + '.css';
+    // remove old css
     $("<link/>", {
         rel: "stylesheet",
     }).remove();
+
+    // add new css
     $("<link/>", {
         rel: "stylesheet",
         href: css
     }).appendTo("head");
 }
 
-let Cell = React.createClass({
-    getInitialState: function () {
-        return {
-            symbol: ' ',
-            fg: 'fg-default',
-            bg: 'bg-default'
-        };
-    },
-
-    setFgColor: function (color) {
-        this.setState({
-            fg: 'fg-' + color
-        });
-    },
-
-    setBgColor: function (color) {
-        this.setState({
-            bg: 'bg-' + color
-        });
-    },
-
-    setDefaultColor: function () {
-        this.setState({
-            fg: 'fg-default',
-            bg: 'bg-default'
-        });
-    },
-
-    setReverseColor: function () {
-        this.setState({
-            fg: 'fg-reverse',
-            bg: 'bg-reverse'
-        });
-    },
-
-    setSymbol: function (sym) {
-        this.setState({
-            symbol: sym
-        });
-    },
-
-    render: function () {
-        return (
-            <td className={this.state.fg + ' ' + this.state.bg}>{this.state.symbol}</td>
-        );
-    }
-
-});
-
+/**
+ * Class represents terminal screen
+ */
 let Terminal = React.createClass({
-
+    /**
+     * Terminal stores in state information about current position of cursor and current terminal size.
+     * @returns {{cursor: {x: number, y: number}, width: number, height: number}} -- default state:
+     *   cursor = (0, 0), size = DEFAULT_SIZE
+     */
     getInitialState() {
         return {
             cursor: {'x': 0, 'y': 0},
@@ -111,16 +82,26 @@ let Terminal = React.createClass({
         };
     },
 
+    /**
+     * That function called when component with terminal is initialized on page.
+     */
     componentDidMount() {
         this.start();
     },
 
+    /**
+     * That function establishes a connection to server within websocket and
+     *   configures auto reconnect.
+     */
     start() {
         let socket = new WebSocket(serverUrl);
+        // Type of information received by websocket
         socket.binaryType = 'arraybuffer';
 
+        // register handler of the incoming messages
         socket.onmessage = (e) => this.receiveMessage(ScreenState.decode(e.data));
 
+        // register reconnect
         socket.onclose = () => {
             setTimeout(() => {
                 this.start()
@@ -129,27 +110,46 @@ let Terminal = React.createClass({
         this.setState({socket: socket});
     },
 
-    send(message, type) {
+    /**
+     * Sends a message to server
+     * @param {string} message to send
+     */
+    send(message) {
         this.state.socket.send(message);
     },
 
+    /**
+     * Returns cell on the (i, j) position
+     * @param {number} i
+     * @param {number} j
+     * @returns {Cell}
+     */
     getCell(i, j) {
         return this.refs['cell_' + i + '_' + j]
     },
 
+    /**
+     * Handler of the incoming message
+     * @param message -- decoded protobuf message
+     */
     receiveMessage(message) {
+        // new cursor position
         let cx =  message.cursor_x;
         let cy = message.cursor_y;
+
+        // little line feed hack
         if (cx == this.state.width) {
             cx = 0;
             cy++;
         }
+
         this.eraseCursor();
+
+        // update lines from message
         for (let screenLine of message.lines) {
             let i = screenLine.i;
             let cells = screenLine.cells;
             for (let j = 0; j < this.state.width; j++) {
-                // const cell = this.screen[i][j];
                 const cell = this.getCell(i, j);
                 let {character: data,
                     reversed: reversed,
@@ -172,6 +172,11 @@ let Terminal = React.createClass({
         this.updateCursor(cx, cy);
     },
 
+    /**
+     * Updates coordinates of cursor and set to the cursor cell reversed colors
+     * @param {number} x
+     * @param {number} y
+     */
     updateCursor(x, y) {
         this.setState({
             cursor: {x: x, y: y}
@@ -181,6 +186,9 @@ let Terminal = React.createClass({
         }
     },
 
+    /**
+     * Reset colors of the cursor cell to defaults
+     */
     eraseCursor() {
         let {x, y} = this.state.cursor;
         if (y < this.state.height && x < this.state.width) {
@@ -188,22 +196,32 @@ let Terminal = React.createClass({
         }
     },
 
+    /**
+     * Handler of keyDown events
+     */
     onKeyDown(e) {
         const message = keyToMessage(e);
         if (message) {
-            this.send(message, 'control');
+            this.send(message);
             e.preventDefault();
             return false;
         }
     },
 
+    /**
+     * Handler of keyPress events
+     */
     onKeyPress(e) {
         let message = keyToMessage(e);
         if (message) {
-            this.send(message, 'command');
+            this.send(message);
         }
     },
 
+    /**
+     * Renders terminal as <table>.
+     * @returns {XML}
+     */
     render: function () {
         let rows = [];
         for (let i = 0; i < this.state.height; i++) {
@@ -233,30 +251,119 @@ let Terminal = React.createClass({
     }
 });
 
-function keyToMessage(e) {
-    // console.log(e.keyCode);
+/**
+ * Class represents one symbol on the terminal screen
+ */
+let Cell = React.createClass({
+    /**
+     * Each cell contains symbol in this cell and foreground and background color.
+     * That information is stored in state.
+     * @returns {{symbol: string, fg: string, bg: string}} --
+     *   Initial state with space symbol and default colors
+     */
+    getInitialState: function () {
+        return {
+            symbol: ' ',
+            fg: 'fg-default',
+            bg: 'bg-default'
+        };
+    },
 
+    /**
+     * Sets foreground color.
+     * @param {string} color
+     */
+    setFgColor: function (color) {
+        this.setState({
+            fg: 'fg-' + color
+        });
+    },
+
+    /**
+     * Sets background color.
+     * @param {string} color
+     */
+    setBgColor: function (color) {
+        this.setState({
+            bg: 'bg-' + color
+        });
+    },
+
+    /**
+     * Sets default colors.
+     */
+    setDefaultColor: function () {
+        this.setState({
+            fg: 'fg-default',
+            bg: 'bg-default'
+        });
+    },
+
+    /**
+     * Sets reversed colors.
+     */
+    setReverseColor: function () {
+        this.setState({
+            fg: 'fg-reverse',
+            bg: 'bg-reverse'
+        });
+    },
+
+    /**
+     * Sets symbol in cell.
+     * @param {string} sym
+     */
+    setSymbol: function (sym) {
+        this.setState({
+            symbol: sym
+        });
+    },
+
+    /**
+     * Renders a cell as <td> element of a table
+     * @returns {XML}
+     */
+    render: function () {
+        return (
+            <td className={this.state.fg + ' ' + this.state.bg}>{this.state.symbol}</td>
+        );
+    }
+
+});
+
+/**
+ * Function that transform keyDown or keyPress event to
+ *   the char or escape or control symbol/sequence
+ * @param e -- keyDown/keyPress event
+ * @returns {string} -- string corresponding pressed keys
+ */
+function keyToMessage(e) {
+    /**
+     * @param {number} x -- key number
+     * @returns {string} -- symbol corresponds Ctrl+key combination
+     */
     function ctrlKey(x) {
         return String.fromCharCode(x - 65 + 1);
     }
 
+    // key press event
     if (e.type === "keypress") {
         if (e.which == null) { // IE
             return (e.keyCode < 32)
-                ? null // спец. символ
+                ? null // special symbol
                 : String.fromCharCode(e.keyCode);
         }
 
-        if (e.which != 0 && e.charCode != 0) { // все кроме IE
+        if (e.which != 0 && e.charCode != 0) { // all browses except IE
             return (e.which < 32)
-                ? null // спец. символ
+                ? null // special symbol
                 : String.fromCharCode(e.which); // остальные
         }
 
-        return null; // спец. символ
+        return null; // special symbol
     }
 
-    console.log('pressed key ' + e.which);
+    // keyDown event
     let message = null;
     if (e.which == 8) { // backspace
         message = ctrl.BACKSPACE;
@@ -264,8 +371,6 @@ function keyToMessage(e) {
         message = ctrl.TAB;
     } else if (e.which == 13) { // enter
         message = ctrl.LF;
-    } else if (e.which == 20) { // caps lock
-
     } else if (e.which == 27) { // esc
         message = ctrl.ESC;
     } else if (e.which == 33) { // page up
@@ -303,6 +408,11 @@ function keyToMessage(e) {
     return message;
 }
 
+/**
+ * Function that synchronously reads json file
+ * @param jsonPath -- path to file
+ * @returns -- content of file
+ */
 function getJson (jsonPath){
     let result = null;
 
@@ -316,25 +426,7 @@ function getJson (jsonPath){
     return result;
 }
 
-const сolorStyles = {
-    0: '#screen td.fg-black',
-    1: '#screen td.fg-red',
-    2: '#screen td.fg-green',
-    3: '#screen td.fg-brown',
-    4: '#screen td.fg-blue',
-    5: '#screen td.fg-magenta',
-    6: '#screen td.fg-cyan',
-    7: '#screen td.fg-white',
-    8: '#screen td.bg-black',
-    9: '#screen td.bg-red',
-    10: '#screen td.bg-green',
-    11: '#screen td.bg-brown',
-    12: '#screen td.bg-blue',
-    13: '#screen td.bg-magenta',
-    14: '#screen td.bg-cyan',
-    15: '#screen td.bg-white'
-};
-
+// map represents the string color names through the protobuf color types
 const protocolColors = {
     0: 'black',
     1: 'red',
@@ -347,6 +439,7 @@ const protocolColors = {
     8: 'default'
 };
 
+// control symbols
 const ctrl = {
     LF: '\n',
     BACKSPACE: '\u0008',
@@ -382,23 +475,7 @@ const fKeys = {
     12: ctrl.CSI + '24~'
 };
 
-
-// *F keys* for vt220 terminal
-// const fKeys = {
-//     1: ctrl.ESC + 'OP',
-//     2: ctrl.ESC + 'OQ',
-//     3: ctrl.ESC + 'OR',
-//     4: ctrl.ESC + 'OS',
-//     5: ctrl.CSI + '15~',
-//     6: ctrl.CSI + '17~',
-//     7: ctrl.CSI + '18~',
-//     8: ctrl.CSI + '19~',
-//     9: ctrl.CSI + '20~',
-//     10: ctrl.CSI + '21~',
-//     11: ctrl.CSI + '23~',
-//     12: ctrl.CSI + '24~'
-// };
-
+// symbols for Ctrl+number combinations
 const controlNumberKeys = {
     0: '\u0030',
     1: '\u0031',
