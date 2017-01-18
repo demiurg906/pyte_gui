@@ -1,0 +1,15 @@
+#terminal {
+    display:inline-block
+}
+
+#screen {
+    border-collapse:collapse;
+    border-color:black
+}
+
+#screen td{
+    font-family:PT Mono, monospace;
+    border-color:black;
+    width:.6em;
+    height:1.2em
+}

@@ -1,5 +1,5 @@
-const $ = require('jquery');
-const React = require('react');
+// const $ = require('jquery');
+// const React = require('react');
 
 const ProtoBuf = require("protobufjs");
 
@@ -17,34 +17,46 @@ const serverUrl = 'ws://' + window.location.host + '/ws';
 const ScreenState = ProtoBuf.loadProtoFile('screen-message.proto').build("ScreenState");
 
 // list of all available palettes
-const paletteList = getJson('schemes/index.json');
+const paletteList = getJson('schemes.json');
 
 // main function that initialize all elements on the client page
 $(function () {
-    React.render(
-        <div>
-            <Terminal/>
-            <div id="palette-switcher">
-                Samples of the palettes colors you can see <a href="http://terminal.sexy/">here</a>
-                <ul>{paletteList.map((palette) => <Palette name={palette}/>)}</ul>
-            </div>
-        </div>, document.body);
-    updateCss(DEFAULT_PALETTE);
-    $("#terminal").focus()
-});
+    let terminal = new Terminal('screen', DEFAULT_WIDTH, DEFAULT_HEIGHT);
+    const paletteSwitcher = new PaletteSwitcher();
+    let socket;
+    function connect() {
+        socket = new WebSocket(serverUrl);
+        // Type of information received by websocket
+        socket.binaryType = 'arraybuffer';
 
-/**
- * Class that represents palette in the palette-switcher list
- */
-let Palette = React.createClass({
-    onClick: function () {
-        updateCss(this.props.name);
-        console.log(this.props.name + " palette chosen");
-    },
+        // register handler of the incoming messages
+        socket.onmessage = (e) => terminal.receiveMessage(ScreenState.decode(e.data));
 
-    render: function () {
-        return <li onClick={this.onClick}>{this.props.name}</li>
+        // register reconnect
+        socket.onclose = () => {
+            setTimeout(() => { connect() }, 5000)
+        };
     }
+    connect();
+
+    updateCss(DEFAULT_PALETTE);
+
+    const element = document.getElementById('terminal');
+    element.onkeydown = e => {
+        let message = keyToMessage(e);
+        if (message) {
+            socket.send(message);
+            e.preventDefault();
+            return false;
+        }
+    };
+    element.onkeypress = e => {
+        let message = keyToMessage(e);
+        if (message) {
+            socket.send(message);
+        }
+    };
+    element.focus()
 });
 
 /**
@@ -66,67 +78,114 @@ function updateCss(palette) {
 }
 
 /**
+ * Class that represents palette switcher list
+ */
+class PaletteSwitcher {
+    constructor() {
+        for (let palette of paletteList) {
+            $('#palette-list').append('<li id="{0}">{0}</li>'.format(palette));
+            let element = document.getElementById(palette);
+            element.onclick = function () {
+                updateCss(element.id);
+            }
+        }
+    }
+}
+
+/**
  * Class represents terminal screen
  */
-let Terminal = React.createClass({
-    /**
-     * Terminal stores in state information about current position of cursor and current terminal size.
-     * @returns {{cursor: {x: number, y: number}, width: number, height: number}} -- default state:
-     *   cursor = (0, 0), size = DEFAULT_SIZE
-     */
-    getInitialState() {
-        return {
-            cursor: {'x': 0, 'y': 0},
-            width: DEFAULT_WIDTH,
-            height: DEFAULT_HEIGHT
-        };
-    },
+class Terminal {
+    constructor(id, width, height) {
+        this.width = width;
+        this.height = height;
+        this.screen = new Array(height);
+        this.cursor = {'x': 0, 'y': 0};
+
+        const table = document.getElementById(id);
+        for (let i = 0; i < height; i++) {
+            this.screen[i] = new Array(width);
+            const row = table.insertRow(i);
+            for (let j = 0; j < width; j++) {
+                const cell = row.insertCell(j);
+                cell.id = this.getCellId(i, j);
+                cell.className = 'fg-default bg-default';
+                cell.innerText = ' ';
+                this.screen[i][j] = cell;
+            }
+        }
+    }
 
     /**
-     * That function called when component with terminal is initialized on page.
-     */
-    componentDidMount() {
-        this.start();
-    },
-
-    /**
-     * That function establishes a connection to server within websocket and
-     *   configures auto reconnect.
-     */
-    start() {
-        let socket = new WebSocket(serverUrl);
-        // Type of information received by websocket
-        socket.binaryType = 'arraybuffer';
-
-        // register handler of the incoming messages
-        socket.onmessage = (e) => this.receiveMessage(ScreenState.decode(e.data));
-
-        // register reconnect
-        socket.onclose = () => {
-            setTimeout(() => {
-                this.start()
-            }, 5000)
-        };
-        this.setState({socket: socket});
-    },
-
-    /**
-     * Sends a message to server
-     * @param {string} message to send
-     */
-    send(message) {
-        this.state.socket.send(message);
-    },
-
-    /**
-     * Returns cell on the (i, j) position
+     * returns id of cell on (i, j) position
      * @param {number} i
      * @param {number} j
-     * @returns {Cell}
+     */
+    getCellId(i, j) {
+        return 'cell_{0}_{1}'.format(i, j);
+    }
+
+    /**
+     * returns cell on (i, j) position
+     * @param {number} i
+     * @param {number} j
      */
     getCell(i, j) {
-        return this.refs['cell_' + i + '_' + j]
-    },
+        return document.getElementById(this.getCellId(i, j));
+    }
+
+    /**
+     * Sets color to cell
+     */
+    setColor(cell, color, type) {
+        const className = type + '-' + color;
+        let regexp;
+        if (type === 'fg')
+            regexp = /fg-\w*/;
+        else
+            regexp = /bg-\w*/;
+        cell.className = cell.className.replace(regexp, className);
+    }
+
+    /**
+     * Sets foreground color.
+     * @param {string} color
+     */
+    setFgColor(cell, color) {
+        this.setColor(cell, color, 'fg')
+    }
+
+    /**
+     * Sets background color.
+     * @param {string} color
+     */
+    setBgColor(cell, color) {
+        this.setColor(cell, color, 'bg')
+    }
+
+    /**
+     * Sets reversed colors.
+     */
+    setReverseColor(cell) {
+        this.setFgColor(cell, 'reverse');
+        this.setBgColor(cell, 'reverse');
+    }
+
+    /**
+     * Sets default colors.
+     */
+    setDefaultColor(cell) {
+        this.setFgColor(cell, 'default');
+        this.setBgColor(cell, 'default');
+    }
+
+    /**
+     * Sets symbol in cell.
+     * @param {string} sym
+     */
+    setSymbol(cell, symbol) {
+        cell.innerText = symbol;
+    }
 
     /**
      * Handler of the incoming message
@@ -134,11 +193,11 @@ let Terminal = React.createClass({
      */
     receiveMessage(message) {
         // new cursor position
-        let cx =  message.cursor_x;
+        let cx = message.cursor_x;
         let cy = message.cursor_y;
 
         // little line feed hack
-        if (cx == this.state.width) {
+        if (cx == this.width) {
             cx = 0;
             cy++;
         }
@@ -149,28 +208,30 @@ let Terminal = React.createClass({
         for (let screenLine of message.lines) {
             let i = screenLine.i;
             let cells = screenLine.cells;
-            for (let j = 0; j < this.state.width; j++) {
+            for (let j = 0; j < this.width; j++) {
                 const cell = this.getCell(i, j);
-                let {character: data,
+                let {
+                    character: data,
                     reversed: reversed,
                     fg_color: fg,
-                    bg_color: bg } = cells[j];
+                    bg_color: bg
+                } = cells[j];
 
                 fg = protocolColors[fg];
                 bg = protocolColors[bg];
 
-                cell.setSymbol(data);
+                this.setSymbol(cell, data);
 
-                cell.setFgColor(fg);
-                cell.setBgColor(bg);
+                this.setFgColor(cell, fg);
+                this.setBgColor(cell, bg);
 
                 if (reversed) {
-                    cell.setReverseColor();
+                    this.setReverseColor(cell);
                 }
             }
         }
         this.updateCursor(cx, cy);
-    },
+    }
 
     /**
      * Updates coordinates of cursor and set to the cursor cell reversed colors
@@ -178,158 +239,22 @@ let Terminal = React.createClass({
      * @param {number} y
      */
     updateCursor(x, y) {
-        this.setState({
-            cursor: {x: x, y: y}
-        });
-        if (y < this.state.height && x < this.state.width) {
-            this.getCell(y, x).setReverseColor();
+        this.cursor = {x: x, y: y};
+        if (y < this.height && x < this.width) {
+            this.setReverseColor(this.getCell(y, x));
         }
-    },
+    }
 
     /**
      * Reset colors of the cursor cell to defaults
      */
     eraseCursor() {
-        let {x, y} = this.state.cursor;
-        if (y < this.state.height && x < this.state.width) {
-            this.getCell(y, x).setDefaultColor();
+        let {x, y} = this.cursor;
+        if (y < this.height && x < this.width) {
+            this.setDefaultColor(this.getCell(y, x));
         }
-    },
-
-    /**
-     * Handler of keyDown events
-     */
-    onKeyDown(e) {
-        const message = keyToMessage(e);
-        if (message) {
-            this.send(message);
-            e.preventDefault();
-            return false;
-        }
-    },
-
-    /**
-     * Handler of keyPress events
-     */
-    onKeyPress(e) {
-        let message = keyToMessage(e);
-        if (message) {
-            this.send(message);
-        }
-    },
-
-    /**
-     * Renders terminal as <table>.
-     * @returns {XML}
-     */
-    render: function () {
-        let rows = [];
-        for (let i = 0; i < this.state.height; i++) {
-            let row = [];
-            for (let j = 0; j < this.state.width; j++) {
-                row.push(<Cell
-                    key={'(' + i + ',' + j + ')'}
-                    x={i}
-                    y={j}
-                    ref={'cell_' + i + '_' + j}
-
-                />);
-            }
-            rows.push(<tr key={'row ' + i}>{row}</tr>);
-        }
-        return (
-            <div id="terminal"
-                 tabIndex="1"
-                 onKeyDown={this.onKeyDown}
-                 onKeyPress={this.onKeyPress}
-            >
-                <table id="screen" frame="border">
-                    {rows}
-                </table>
-            </div>
-        );
     }
-});
-
-/**
- * Class represents one symbol on the terminal screen
- */
-let Cell = React.createClass({
-    /**
-     * Each cell contains symbol in this cell and foreground and background color.
-     * That information is stored in state.
-     * @returns {{symbol: string, fg: string, bg: string}} --
-     *   Initial state with space symbol and default colors
-     */
-    getInitialState: function () {
-        return {
-            symbol: ' ',
-            fg: 'fg-default',
-            bg: 'bg-default'
-        };
-    },
-
-    /**
-     * Sets foreground color.
-     * @param {string} color
-     */
-    setFgColor: function (color) {
-        this.setState({
-            fg: 'fg-' + color
-        });
-    },
-
-    /**
-     * Sets background color.
-     * @param {string} color
-     */
-    setBgColor: function (color) {
-        this.setState({
-            bg: 'bg-' + color
-        });
-    },
-
-    /**
-     * Sets default colors.
-     */
-    setDefaultColor: function () {
-        this.setState({
-            fg: 'fg-default',
-            bg: 'bg-default'
-        });
-    },
-
-    /**
-     * Sets reversed colors.
-     */
-    setReverseColor: function () {
-        this.setState({
-            fg: 'fg-reverse',
-            bg: 'bg-reverse'
-        });
-    },
-
-    /**
-     * Sets symbol in cell.
-     * @param {string} sym
-     */
-    setSymbol: function (sym) {
-        this.setState({
-            symbol: sym
-        });
-    },
-
-    /**
-     * Renders a cell as <td> element of a table
-     * @returns {XML}
-     */
-    render: function () {
-        return (
-            <td className={this.state.fg + ' ' + this.state.bg}>{this.state.symbol}</td>
-        );
-    }
-
-});
+}
 
 /**
  * Function that transform keyDown or keyPress event to
@@ -424,6 +349,19 @@ function getJson (jsonPath){
             result = data;
         }});
     return result;
+}
+
+// String format function definition
+if (!String.prototype.format) {
+    String.prototype.format = function() {
+        let args = arguments;
+        return this.replace(/{(\d+)}/g, function(match, number) {
+            return typeof args[number] != 'undefined'
+                ? args[number]
+                : match
+                ;
+        });
+    };
 }
 
 // map represents the string color names through the protobuf color types

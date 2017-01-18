@@ -18,8 +18,8 @@ import screen_message_pb2
 DEFAULT_SIZE = (80, 24)
 
 # command to run a bash
-# exe = shlex.split('bash -i')  # run from current user
-exe = shlex.split('sudo -H -u guest bash -i')  # run from guest user
+exe = shlex.split('bash -i')  # run from current user
+# exe = shlex.split('sudo -H -u guest bash -i')  # run from guest user
 
 # database with screen states of clients
 users_screens = shelve.open('usersScreens.db')
@@ -163,6 +163,7 @@ async def websocket_handler(request):
     try:
         async for msg in ws:
             if msg.type == aiohttp.WSMsgType.TEXT:
+                print(msg.data.encode())
                 p_out.write(msg.data.encode())
             elif msg.type == aiohttp.WSMsgType.ERROR:
                 print('ws connection closed with exception {}'.
@@ -240,7 +241,7 @@ proto_colors = {
     "default": screen_message_pb2.DEFAULT
 }
 
-# start server
+# connect server
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         start_server(sys.argv[1])

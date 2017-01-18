@@ -1,0 +1,18 @@
+#palette-switcher {
+    float:right;
+    overflow:scroll;
+    width:20em;
+    height:99vh
+}
+
+#palette-switcher ul {
+    list-style-type:none
+}
+
+#palette-switcher li {
+    cursor:pointer
+}
+
+#palette-switcher li:hover {
+    background-color:#9ea894
+}

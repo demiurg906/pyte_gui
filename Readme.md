@@ -4,13 +4,12 @@ It's a simple gui for [pyte](https://github.com/selectel/pyte) terminal emulator
 
 ### Build and run instructions
 
-Project requires [Node.js](https://nodejs.org/) v6.9+ to run.
+Project requires [Browserify](http://browserify.org/) to run. Install it with `npm install -g browserify`
 
 Firstly install pyte 
 `pip install pyte`
 
 Then install all dependencies of this package 
-`npm install`
 `npm install -only=dev`
 
-After that you can start server with a `nmp run run-server`
+After that you can start server with a `nmp run run-server`. Server runs at http://0.0.0.0:8080
