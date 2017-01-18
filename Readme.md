@@ -4,7 +4,7 @@ It's a simple gui for [pyte](https://github.com/selectel/pyte) terminal emulator
 
 ### Build and run instructions
 
-Project requires [Node.js](https://nodejs.org/) v6.9+ to run.
+Project requires [Node.js](https://nodejs.org/) to run.
 
 Firstly install pyte 
 `pip install pyte`
