@@ -17,7 +17,7 @@ const serverUrl = 'ws://' + window.location.host + '/ws';
 const ScreenState = ProtoBuf.loadProtoFile('screen-message.proto').build("ScreenState");
 
 // list of all available palettes
-const paletteList = getJson('schemes/index.json');
+const paletteList = getJson('schemes.json');
 
 // main function that initialize all elements on the client page
 $(function () {
